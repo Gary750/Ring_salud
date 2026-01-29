@@ -69,10 +69,6 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                         style: TextStyle(fontSize: 18, color: Colors.blueGrey[600], height: 1.5),
                       ),
                       const SizedBox(height: 30),
-
-                    
-                      const SizedBox(height: 40),
-
                       // Caja de Aviso Azul Claro
                       Container(
                         padding: const EdgeInsets.all(20),
@@ -178,7 +174,7 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                           ),
 
                           const SizedBox(height: 15),
-
+/*
                           // Botón PACIENTES (Outline)
                           OutlinedButton(
                             onPressed: () {
@@ -192,15 +188,16 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                             ),
                             child: const Text("Acceso para pacientes"),
                           ),
-
+*/
                           const SizedBox(height: 20),
-                          
+                          /*
                           // Error Message Placeholder (Visual)
                           const Text(
                             "Credenciales incorrectas. Revisa tu usuario y contraseña.",
                             style: TextStyle(color: Colors.redAccent, fontSize: 12),
                             textAlign: TextAlign.center,
                           ),
+                          */
                         ],
                       ),
                     ),
