@@ -38,39 +38,12 @@ class _LoginViewMobileState extends State<LoginViewMobile> {
                 children: [
                   // --- 1. LOGO ---
                   // Nota: Reemplaza esto con Image.asset('assets/tu_logo.png')
-                  const Icon(
-                    Icons.local_hospital, 
-                    size: 80, 
-                    color: Colors.blueAccent
-                  ),
-                  const SizedBox(height: 10),
-                  
-                  // --- 2. TÍTULOS ---
-                  Text(
-                    "RING SALU",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900, // Extra Bold
-                      color: darkBlueText,
-                      fontFamily: 'Roboto', // O la fuente que uses
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  Text(
-                    "DR. MARTIN TRIGUEROS",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.lightBlue[400],
-                      letterSpacing: 2.0,
-                    ),
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: 200,
                   ),
                   
-                  const SizedBox(height: 50),
-
-                  // --- 3. INPUT USUARIO ---
+                  // --- 2. INPUT USUARIO ---
                   _buildLabelSection("Usuario", "Correo o ID"),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -84,7 +57,7 @@ class _LoginViewMobileState extends State<LoginViewMobile> {
 
                   const SizedBox(height: 20),
 
-                  // --- 4. INPUT CONTRASEÑA ---
+                  // --- 3. INPUT CONTRASEÑA ---
                   _buildLabelSection("Contraseña", "Minimo 8 caracteres"),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -99,7 +72,7 @@ class _LoginViewMobileState extends State<LoginViewMobile> {
 
                   const SizedBox(height: 15),
 
-                  // --- 5. LINK OLVIDASTE CONTRASEÑA ---
+                  // --- 4. LINK OLVIDASTE CONTRASEÑA ---
                   InkWell(
                     onTap: () {
                       print("Recuperar contraseña");
@@ -118,7 +91,7 @@ class _LoginViewMobileState extends State<LoginViewMobile> {
 
                   const SizedBox(height: 40),
 
-                  // --- 6. BOTÓN ACCEDER ---
+                  // --- 5. BOTÓN ACCEDER ---
                   ElevatedButton(
                     onPressed: () => _controller.login(context),
                     style: ElevatedButton.styleFrom(
@@ -139,7 +112,7 @@ class _LoginViewMobileState extends State<LoginViewMobile> {
                     ),
                   ),
                   
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 200),
                 ],
               ),
             ),
