@@ -22,7 +22,7 @@ class _LoginViewMobileState extends State<LoginViewMobile> {
   Widget build(BuildContext context) {
     // Definimos los colores
     final Color primaryBlue = const Color(0xFF0077C2); // Azul botón/logo
-    final Color darkBlueText = const Color(0xFF0D1F46); // Azul oscuro texto
+    //final Color darkBlueText = const Color(0xFF0D1F46); // Azul oscuro texto
 
     return Scaffold(
       backgroundColor: Colors.white,

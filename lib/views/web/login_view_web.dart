@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ring_salud/views/shared/register_view.dart';
 import '../../controllers/auth_controller.dart';
 
 class LoginViewWeb extends StatefulWidget {
@@ -23,7 +24,9 @@ class _LoginViewWebState extends State<LoginViewWeb> {
       backgroundColor: bgLight,
       body: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 1200), // Ancho máximo para monitores grandes
+          constraints: const BoxConstraints(
+            maxWidth: 1200,
+          ), // Ancho máximo para monitores grandes
           padding: const EdgeInsets.all(32),
           child: Row(
             children: [
@@ -40,18 +43,24 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                     children: [
                       // Chip superior
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           "● Plataforma de tratamientos",
-                          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: primaryBlue,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Título Grande
                       Text(
                         "Acceso para médicos",
@@ -62,11 +71,15 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Descripción
                       Text(
                         "Gestiona pacientes, tratamientos y alertas desde un panel seguro con entorno clínico en azul.",
-                        style: TextStyle(fontSize: 18, color: Colors.blueGrey[600], height: 1.5),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.blueGrey[600],
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 30),
                       // Caja de Aviso Azul Claro
@@ -79,9 +92,12 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                         ),
                         child: const Text(
                           "Las credenciales del médico son independientes de las del paciente.\nLos pacientes acceden con número de control y contraseña generados en tu panel.",
-                          style: TextStyle(color: Color(0xFF024B80), height: 1.4),
+                          style: TextStyle(
+                            color: Color(0xFF024B80),
+                            height: 1.4,
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -103,7 +119,7 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                           color: Colors.blueGrey.withOpacity(0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
-                        )
+                        ),
                       ],
                     ),
                     child: Form(
@@ -112,9 +128,19 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text("Iniciar sesión", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textDark)),
+                          Text(
+                            "Iniciar sesión",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: textDark,
+                            ),
+                          ),
                           const SizedBox(height: 10),
-                          const Text("Introduce tus credenciales de médico para acceder al panel.", style: TextStyle(color: Colors.grey)),
+                          const Text(
+                            "Introduce tus credenciales de médico para acceder al panel.",
+                            style: TextStyle(color: Colors.grey),
+                          ),
                           const SizedBox(height: 30),
 
                           // Input Usuario
@@ -132,10 +158,29 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                             controller: _controller.passwordController,
                             obscureText: true,
                             decoration: _inputDecoration("••••••••"),
-                            validator: (v) => v!.length < 6 ? "Mínimo 6 caracteres" : null,
+                            validator: (v) =>
+                                v!.length < 6 ? "Mínimo 6 caracteres" : null,
                           ),
 
                           const SizedBox(height: 15),
+
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RegisterView()
+                                )
+                              );
+                            },
+                            child: Text(
+                              "Registrar nuevo médico o paciente",
+                              style: TextStyle(
+                                color: primaryBlue,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
 
                           // Fila: Checkbox y Olvidaste contraseña
                           Row(
@@ -144,17 +189,30 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                               Row(
                                 children: [
                                   Checkbox(
-                                    value: _rememberMe, 
-                                    onChanged: (v) => setState(() => _rememberMe = v!),
+                                    value: _rememberMe,
+                                    onChanged: (v) =>
+                                        setState(() => _rememberMe = v!),
                                     activeColor: primaryBlue,
                                   ),
-                                  Text("Recordar sesión", style: TextStyle(color: primaryBlue, fontSize: 13)),
+                                  Text(
+                                    "Recordar sesión",
+                                    style: TextStyle(
+                                      color: primaryBlue,
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                 ],
                               ),
                               TextButton(
                                 onPressed: () {},
-                                child: Text("¿Olvidaste tu contraseña?", style: TextStyle(color: primaryBlue, fontSize: 12)),
-                              )
+                                child: Text(
+                                  "¿Olvidaste tu contraseña?",
+                                  style: TextStyle(
+                                    color: primaryBlue,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
 
@@ -167,14 +225,19 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                               backgroundColor: primaryBlue,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               elevation: 0,
                             ),
-                            child: const Text("Acceder", style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              "Acceder",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
 
                           const SizedBox(height: 15),
-/*
+                          /*
                           // Botón PACIENTES (Outline)
                           OutlinedButton(
                             onPressed: () {
@@ -213,12 +276,16 @@ class _LoginViewWebState extends State<LoginViewWeb> {
 
   // --- Widgets Auxiliares para limpiar el código ---
 
-  
-
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(color: Color(0xFF018BF0), fontWeight: FontWeight.w600)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF018BF0),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -227,7 +294,9 @@ class _LoginViewWebState extends State<LoginViewWeb> {
       hintText: hint,
       hintStyle: TextStyle(color: Colors.blueGrey[200]),
       filled: true,
-      fillColor: const Color(0xFFF5F9FF), // Fondo azul muy pálido dentro del input
+      fillColor: const Color(
+        0xFFF5F9FF,
+      ), // Fondo azul muy pálido dentro del input
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none, // Sin borde por defecto (estilo moderno)
