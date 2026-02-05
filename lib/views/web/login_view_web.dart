@@ -174,7 +174,7 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                               );
                             },
                             child: Text(
-                              "Registrar nuevo médico o paciente",
+                              "Registrar nuevo especialista",
                               style: TextStyle(
                                 color: primaryBlue,
                                 fontSize: 12,

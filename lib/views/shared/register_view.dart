@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../controllers/register_controller.dart';
+import '../../controllers/singup_controller.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -12,11 +12,10 @@ class _RegisterViewState extends State<RegisterView> {
   final RegisterController _controller = RegisterController();
   bool _isLoading = false;
 
-  // --- PALETA DE COLORES (Ring Salud) ---
-  final Color bgLight = const Color(0xFFF0F4FA);      // Fondo gris azulado
-  final Color primaryBlue = const Color(0xFF018BF0);  // Azul Botón
-  final Color textDark = const Color(0xFF0D1F46);     // Azul oscuro texto
-  final Color inputFill = const Color(0xFFF5F9FF);    // Fondo input
+  final Color bgLight = const Color(0xFFF0F4FA);
+  final Color primaryBlue = const Color(0xFF018BF0);
+  final Color textDark = const Color(0xFF0D1F46);
+  final Color inputFill = const Color(0xFFF5F9FF);
 
   @override
   void dispose() {
@@ -38,9 +37,6 @@ class _RegisterViewState extends State<RegisterView> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // --- RESPONSIVIDAD ---
-          // Si el ancho es > 900px (PC), usamos diseño dividido.
-          // Si es menor, usamos diseño vertical (Móvil).
           if (constraints.maxWidth > 900) {
             return _buildDesktopLayout();
           } else {
@@ -56,45 +52,52 @@ class _RegisterViewState extends State<RegisterView> {
   // ======================================================
   Widget _buildDesktopLayout() {
     return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 1200),
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-        child: Row(
-          children: [
-            // Izquierda: Texto de Marketing
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 60.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
+      // SOLUCIÓN AL OVERFLOW: Agregamos scroll aquí también
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Row(
+            children: [
+              // Izquierda: Texto de Marketing
+              Expanded(
+                flex: 5,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 60.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "● Nuevo Usuario",
+                          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      child: Text("● Nuevo Usuario", style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 20),
-                    Text("Únete a Ring Salud", style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: textDark)),
-                    const SizedBox(height: 20),
-                    Text(
-                      "Crea una cuenta para gestionar tus citas médicas o administrar tus pacientes desde una plataforma centralizada.",
-                      style: TextStyle(fontSize: 18, color: Colors.blueGrey[600], height: 1.5),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      Text(
+                        "Únete a Ring Salud",
+                        style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: textDark),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "Crea una cuenta para gestionar tus citas médicas o administrar tus pacientes desde una plataforma centralizada.",
+                        style: TextStyle(fontSize: 18, color: Colors.blueGrey[600], height: 1.5),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            // Derecha: Tarjeta con Formulario
-            Expanded(
-              flex: 4,
-              child: _buildFormCard(),
-            ),
-          ],
+              // Derecha: Tarjeta con Formulario
+              Expanded(flex: 4, child: _buildFormCard()),
+            ],
+          ),
         ),
       ),
     );
@@ -111,7 +114,10 @@ class _RegisterViewState extends State<RegisterView> {
           children: [
             Icon(Icons.app_registration, size: 50, color: primaryBlue),
             const SizedBox(height: 10),
-            Text("Crear Cuenta", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textDark)),
+            Text(
+              "Crear Cuenta",
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textDark),
+            ),
             const SizedBox(height: 30),
             Container(
               constraints: const BoxConstraints(maxWidth: 500),
@@ -147,28 +153,35 @@ class _RegisterViewState extends State<RegisterView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             
-            // --- 1. DROPDOWN (Selector de Rol) ---
-            _buildLabel("Soy..."),
-            DropdownButtonFormField<String>(
-              value: _controller.selectedRole,
-              decoration: _inputDecoration("Selecciona tu perfil"),
-              items: const [
-                DropdownMenuItem(
-                  value: 'paciente',
-                  child: Row(children: [Icon(Icons.person_outline, color: Colors.grey), SizedBox(width: 10), Text("Paciente")]),
-                ),
-                DropdownMenuItem(
-                  value: 'doctor',
-                  child: Row(children: [Icon(Icons.medical_services_outlined, color: Colors.grey), SizedBox(width: 10), Text("Médico / Especialista")]),
-                ),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _controller.selectedRole = val);
-              },
+            // --- NOMBRE COMPLETO ---
+            _buildLabel("Nombre Completo"),
+            TextFormField(
+              controller: _controller.nameController,
+              decoration: _inputDecoration("Tu nombre completo"),
+              validator: (v) => v!.isEmpty ? "Requerido" : null,
+            ),
+            const SizedBox(height: 20),
+            
+            // --- NOMBRE DE USUARIO (Nuevo) ---
+            _buildLabel("Nombre de Usuario"),
+            TextFormField(
+              controller: _controller.usernameController, // Descomentado
+              decoration: _inputDecoration("Elige un nombre de usuario"),
+              validator: (v) => v!.isEmpty ? "Requerido" : null,
             ),
             const SizedBox(height: 20),
 
-            // --- 2. INPUT EMAIL ---
+            // --- TELÉFONO (Nuevo) ---
+            _buildLabel("Teléfono"),
+            TextFormField(
+              controller: _controller.phoneController, // Descomentado
+              decoration: _inputDecoration("Número de teléfono"),
+              keyboardType: TextInputType.phone,
+              validator: (v) => v!.isEmpty ? "Requerido" : null,
+            ),
+            const SizedBox(height: 20),
+
+            // --- CORREO ---
             _buildLabel("Correo Electrónico"),
             TextFormField(
               controller: _controller.emailController,
@@ -177,8 +190,16 @@ class _RegisterViewState extends State<RegisterView> {
               validator: (v) => v!.contains("@") ? null : "Correo inválido",
             ),
             const SizedBox(height: 20),
+            
+            // --- DISPONIBILIDAD (Nuevo) ---
+            _buildLabel("Disponibilidad"),
+            TextFormField(
+               controller: _controller.availabilityController, // Descomentado
+               decoration: _inputDecoration("Ej: Lunes a Viernes 9-14h"),
+            ),
+            const SizedBox(height: 20),
 
-            // --- 3. INPUT PASSWORD ---
+            // --- CONTRASEÑA ---
             _buildLabel("Contraseña"),
             TextFormField(
               controller: _controller.passwordController,
@@ -186,26 +207,54 @@ class _RegisterViewState extends State<RegisterView> {
               decoration: _inputDecoration("Mínimo 6 caracteres"),
               validator: (v) => v!.length < 6 ? "Mínimo 6 caracteres" : null,
             ),
+            const SizedBox(height: 20),
+            
+            // --- CONFIRMAR CONTRASEÑA ---
+            _buildLabel("Confirmar Contraseña"),
+            TextFormField(
+              controller: _controller.confirmPassowrdController,
+              obscureText: true,
+              decoration: _inputDecoration("Repite tu contraseña"),
+              validator: (v) => v!.length < 6 ? "Mínimo 6 caracteres" : null,
+            ),
             const SizedBox(height: 30),
 
-            // --- 4. BOTÓN REGISTRAR ---
+            // --- BOTÓN REGISTRAR ---
             ElevatedButton(
-              onPressed: _isLoading ? null : () async {
-                setState(() => _isLoading = true);
-                bool exito = await _controller.register(context);
-                setState(() => _isLoading = false);
-                if (exito && mounted) Navigator.pop(context); // Volver al login
-              },
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      setState(() => _isLoading = true);
+                      bool exito = await _controller.register(context);
+                      setState(() => _isLoading = false);
+                      if (exito && mounted)
+                        Navigator.pop(context); // Volver al login
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: _isLoading
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text("Registrarse", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      "Registrarse",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ],
         ),
@@ -214,11 +263,17 @@ class _RegisterViewState extends State<RegisterView> {
   }
 
   // --- ESTILOS VISUALES ---
-  
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600, fontSize: 14)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: primaryBlue,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
     );
   }
 
@@ -227,7 +282,7 @@ class _RegisterViewState extends State<RegisterView> {
       hintText: hint,
       hintStyle: TextStyle(color: Colors.blueGrey[200]),
       filled: true,
-      fillColor: inputFill, // Color #F5F9FF
+      fillColor: inputFill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,

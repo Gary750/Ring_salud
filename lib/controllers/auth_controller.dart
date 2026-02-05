@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ring_salud/views/mobile/home_mobile.dart';
+import 'package:ring_salud/views/web/dashboard_web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; //! Supabase
 import 'package:flutter/foundation.dart' show kIsWeb; //! Necesario para detectar la plataforma
 
@@ -28,9 +30,10 @@ class AuthController {
 
         if(kIsWeb){
           //? Logica para web (Doctor)
-          if (rol == 'doctor') {
-            print('Login exitoso como Doctor');
+          if (rol == 'doctor' || rol == 'enfermero') {
+            print('Login exitoso como Doctor o Enfermero');
             // Navegar a la vista del doctor
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardWeb()));
           }else{
             await supabase.auth.signOut();
             _mostrarError(context, "Acceso denegado: Los pacientes deben usar la App Móvil.");
@@ -40,6 +43,7 @@ class AuthController {
           if(rol == 'paciente'){
             print("Bienvenido Paciente");
             // Navegar a la vista del paciente
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeMobile()));
           }else{
             await supabase.auth.signOut();
             _mostrarError(context, "Acceso denegado: Los doctores deben usar la versión web.");

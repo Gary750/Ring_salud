@@ -9,10 +9,10 @@ Future<void> main() async {
 
   //! Inicialización de Supabase
   await Supabase.initialize(
-    url: 'https://iliiejzqjupsqrvdqwqy.supabase.co', 
-    anonKey: 'sb_publishable_cyBeWRRAW8ibIFW5iZEOuw_u7rwqe6I', 
+    url: 'example.supabase.co',
+    anonKey: 'your-anon-key',
   );
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
