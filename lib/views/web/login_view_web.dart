@@ -235,32 +235,7 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
-
-                          const SizedBox(height: 15),
-                          /*
-                          // Botón PACIENTES (Outline)
-                          OutlinedButton(
-                            onPressed: () {
-                              // Aquí podrías redirigir a una página de descarga de la app móvil
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: primaryBlue,
-                              side: BorderSide(color: primaryBlue),
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text("Acceso para pacientes"),
-                          ),
-*/
                           const SizedBox(height: 20),
-                          /*
-                          // Error Message Placeholder (Visual)
-                          const Text(
-                            "Credenciales incorrectas. Revisa tu usuario y contraseña.",
-                            style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                          */
                         ],
                       ),
                     ),

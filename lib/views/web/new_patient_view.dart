@@ -20,7 +20,6 @@ class _NewPatientViewState extends State<NewPatientView> {
   @override
   void initState() {
     super.initState();
-    // Ya no generamos nada automático, será manual para coincidir con tu preferencia
   }
 
   @override
@@ -428,33 +427,7 @@ class _NewPatientViewState extends State<NewPatientView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Nombre de Usuario *",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _controller.controlNumberController,
-                    readOnly: false, // CAMBIO: Ahora es editable
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor:
-                          Colors.white, // Blanco para indicar que es editable
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      prefixIcon: const Icon(Icons.person_outline, size: 20),
-                    ),
-                    validator: (v) => v!.isEmpty ? "Requerido" : null,
-                  ),
-                  const Text(
-                    "Nombre de Usuario",
-                    style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-                  ),
+                  _buildInput("Usuario", _controller.usernameController, "Ej. mgomez68")
                 ],
               ),
             ),
@@ -463,34 +436,7 @@ class _NewPatientViewState extends State<NewPatientView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Contraseña *",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _controller.passwordController,
-                    readOnly: false, // CAMBIO: Ahora es editable
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor:
-                          Colors.white, // Blanco para indicar que es editable
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                    ),
-                    validator: (v) =>
-                        v!.length < 6 ? "Mín. 6 caracteres" : null,
-                  ),
-                  const Text(
-                    "Contraseña para el acceso.",
-                    style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-                  ),
+                  _buildInput("Contraseña", _controller.passwordController, "••••••••")
                 ],
               ),
             ),

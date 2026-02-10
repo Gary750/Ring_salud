@@ -191,7 +191,7 @@ class _RegisterViewState extends State<RegisterView> {
             ),
             const SizedBox(height: 20),
             
-            // --- DISPONIBILIDAD (Nuevo) ---
+            // --- DISPONIBILIDAD  ---
             _buildLabel("Disponibilidad"),
             TextFormField(
                controller: _controller.availabilityController, // Descomentado

@@ -11,8 +11,8 @@ class PatientController {
   final TextEditingController allergiesController = TextEditingController();
 
   // --- Datos de Acceso y Credenciales ---
-  final TextEditingController emailController = TextEditingController(); // AHORA ES VITAL PARA EL LOGIN
-  final TextEditingController controlNumberController = TextEditingController(); // Será el "nombre de usuario"
+  final TextEditingController emailController = TextEditingController(); 
+  final TextEditingController usernameController = TextEditingController(); 
   final TextEditingController passwordController = TextEditingController();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -22,17 +22,16 @@ class PatientController {
     if (!formKey.currentState!.validate()) return false;
 
     try {
-      // 1. Obtener ID del Médico que está registrando
+      // 1. Obtener ID del Médico que está regisutrando
       final userEmail = supabase.auth.currentUser?.email;
       if (userEmail == null) throw "No hay sesión activa";
 
       final doctorData = await supabase.from('medico').select('id_medico').eq('correo', userEmail).single();
       final int doctorId = doctorData['id_medico'];
 
-      // 2. CREAR EL AUTH (LOGIN) CON EL CORREO REAL
-      // Antes usábamos el número de control, ahora usamos el emailController
+      // 2. CREAR EL AUTH CON EL CORREO ELECTRONICO
       final AuthResponse res = await supabase.auth.signUp(
-        email: emailController.text.trim(), // <--- CAMBIO AQUÍ: Correo real
+        email: emailController.text.trim(),
         password: passwordController.text.trim(),
         data: {'rol': 'paciente'}, // Metadato para saber que no es doctor
       );
@@ -47,7 +46,7 @@ class PatientController {
           'correo': emailController.text.trim(), 
           'enfermedad': diagnosisController.text.trim(),
           'alergias': allergiesController.text.trim(),
-          'usuario': controlNumberController.text.trim(), 
+          'usuario': usernameController.text.trim(), 
           'contrasena': passwordController.text.trim(),
           'numero_emergencia': emergencyPhoneController.text.trim(),
         });
@@ -77,7 +76,7 @@ class PatientController {
     emergencyPhoneController.dispose();
     emailController.dispose();
     allergiesController.dispose();
-    controlNumberController.dispose();
+    usernameController.dispose();
     passwordController.dispose();
   }
 }

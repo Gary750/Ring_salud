@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:ring_salud/views/web/new_patient_view.dart';
 import '../../models/patient_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardWeb extends StatefulWidget {
+  
   const DashboardWeb({super.key});
 
   @override
@@ -144,22 +146,63 @@ class _DashboardWebState extends State<DashboardWeb> {
       ),
     );
   }
+  
+  Future<String> _getDoctorName() async {
+    final supabase = Supabase.instance.client;
+    try {
+      final userEmail = supabase.auth.currentUser?.email;
+      if (userEmail == null) return "Sin sesión";
+
+      // .single() lanzará una excepción si no encuentra nada o hay más de uno
+      final data = await supabase
+          .from('medico')
+          .select('usuario')
+          .eq('correo', userEmail)
+          .single();
+
+      return data['usuario'] ?? "Sin usuario";
+    } catch (e) {
+      return "Error al cargar";
+    }
+  }
 
   Widget _buildProfileItem() {
     return Container(
       padding: const EdgeInsets.all(20),
       color: const Color(0xFF021442),
-      child: const Row(
+      child: Row(
         children: [
-          CircleAvatar(backgroundColor: Colors.blue, child: Text("AL", style: TextStyle(color: Colors.white))),
-          SizedBox(width: 10),
+          const CircleAvatar(
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.person, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Dra. Ana López", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              Text("Medicina Interna", style: TextStyle(color: Colors.white54, fontSize: 10)),
+              FutureBuilder<String>(
+                future: _getDoctorName(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Text(
+                      "Cargando...",
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    );
+                  }
+
+                  final nombre = snapshot.data ?? "Doctor desconocido";
+
+                  return Text(
+                    nombre,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                },
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
