@@ -138,7 +138,7 @@ class _LoginViewWebState extends State<LoginViewWeb> {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            "Introduce tus credenciales de médico para acceder al panel.",
+                            "Introduce tus credenciales para acceder al panel.",
                             style: TextStyle(color: Colors.grey),
                           ),
                           const SizedBox(height: 30),
