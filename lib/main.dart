@@ -9,8 +9,8 @@ Future<void> main() async {
 
   //! Inicialización de Supabase
   await Supabase.initialize(
-    url: 'https://your-supabase-url.supabase.co', // Reemplaza con tu URL de Supabase
-    anonKey: 'your-anon-key', //
+    url: 'https://your-supabase-url.supabase.co',
+    anonKey: 'your-anon-key',
   );
   runApp(MyApp());
 }

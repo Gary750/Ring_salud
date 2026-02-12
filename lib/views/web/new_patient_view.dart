@@ -48,11 +48,11 @@ class _NewPatientViewState extends State<NewPatientView> {
                     key: _controller.formKey,
                     child: Column(
                       children: [
-                        // --- TARJETA 1: DATOS BÁSICOS (Actualizada con campos BD) ---
+                        // --- TARJETA 1: DATOS BÁSICOS ---
                         _buildSectionCard(
                           title: "1. Datos del paciente",
                           subtitle:
-                              "Información personal coincidente con la base de datos.",
+                              "Información personal del paciente.",
                           child: _buildBasicInfoForm(),
                         ),
 
@@ -68,11 +68,11 @@ class _NewPatientViewState extends State<NewPatientView> {
 
                         const SizedBox(height: 20),
 
-                        // --- TARJETA 3: CREDENCIALES (Modificada a Manual) ---
+                        // --- TARJETA 3: CREDENCIALES ---
                         _buildSectionCard(
                           title: "3. Credenciales de acceso",
                           subtitle:
-                              "Asigne el usuario y contraseña para la base de datos.",
+                              "Asigne el usuario y contraseña",
                           child: _buildCredentialsForm(),
                         ),
                       ],
@@ -308,7 +308,7 @@ class _NewPatientViewState extends State<NewPatientView> {
           children: [
             Expanded(
               child: _buildInput(
-                "Correo electrónico *", // <--- Agrega el asterisco visual
+                "Correo electrónico *", 
                 _controller.emailController,
                 "Necesario para iniciar sesión",
               ),
@@ -334,86 +334,118 @@ class _NewPatientViewState extends State<NewPatientView> {
     );
   }
 
-  Widget _buildMedicationTable() {
+Widget _buildMedicationTable() {
     return Column(
       children: [
-        // Encabezado de tabla simulada
+        // Encabezados
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           color: Colors.blue.withOpacity(0.05),
           child: const Row(
             children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  "  Medicamento",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  "Dosis",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  "Frecuencia",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  "Horarios",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
+              Expanded(flex: 3, child: Text("  Medicamento", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
+              Expanded(flex: 2, child: Text("Dosis", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
+              Expanded(flex: 2, child: Text("Frecuencia (Horas)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
+              Expanded(flex: 2, child: Text("Duracion (Dias)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
+              SizedBox(width: 50), // Espacio para el botón eliminar
             ],
           ),
         ),
-        // Fila de ejemplo (Estática por ahora, para diseño)
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 15),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  "  Enalapril",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+        
+        // Lista Dinámica
+        ..._controller.treatments.asMap().entries.map((entry) {
+          int index = entry.key;
+          TreatmentForm form = entry.value;
+          
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                // Input Nombre Medicamento
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: form.nameController,
+                    decoration: _tableInputDeco("Ej. Paracetamol"),
+                    validator: (v) => v!.isEmpty ? "Requerido" : null,
+                  ),
                 ),
-              ),
-              Expanded(flex: 1, child: Text("10 mg")),
-              Expanded(flex: 1, child: Text("1 vez al día")),
-              Expanded(flex: 1, child: Text("07:30 am")),
-            ],
-          ),
-        ),
+                const SizedBox(width: 10),
+                
+                // Input Dosis
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: form.doseController,
+                    decoration: _tableInputDeco("Ej. 500mg"),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+                
+                // Input Frecuencia (Solo números para int4)
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: form.frequencyController,
+                    decoration: _tableInputDeco("Ej. 8"),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => int.tryParse(v!) == null ? "#" : null,
+                  ),
+                ),
+                
+                const SizedBox(width: 10),
+
+                //Input De la duracion en dias
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: form.endDateController,
+                    decoration: _tableInputDeco("Ej. 7"),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => int.tryParse(v!) == null ? "#" : null,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Botón Eliminar Fila
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _controller.removeTreatment(index);
+                    });
+                  },
+                ),
+              ],
+            ),
+          );
+        }),
+
         const Divider(),
-        // Botón Añadir
+        
+        // Botón Añadir Tratamiento
         Center(
           child: TextButton.icon(
-            onPressed: () {}, // Lógica futura para agregar fila
+            onPressed: () {
+              setState(() {
+                _controller.addTreatment();
+              });
+            },
             icon: const Icon(Icons.add_circle_outline),
-            label: const Text("Añadir medicamento a la lista"),
+            label: const Text("Añadir otro medicamento"),
           ),
-        ),
+        )
       ],
+    );
+  }
+
+  // Decoración pequeña para inputs de tabla
+  InputDecoration _tableInputDeco(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
     );
   }
 
@@ -427,7 +459,7 @@ class _NewPatientViewState extends State<NewPatientView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInput("Usuario", _controller.usernameController, "Ej. mgomez68")
+                  _buildInput("Usuario*", _controller.usernameController, "Ej. mgomez68")
                 ],
               ),
             ),
@@ -436,31 +468,11 @@ class _NewPatientViewState extends State<NewPatientView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInput("Contraseña", _controller.passwordController, "••••••••")
+                  _buildInput("Contraseña*", _controller.passwordController, "••••••••")
                 ],
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.blue),
-              SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  "Estos datos se guardan directamente en las columnas 'usuario' y 'contraseña' de la tabla Paciente.",
-                  style: TextStyle(color: Colors.blueGrey),
-                ),
-              ),
-            ],
-          ),
         ),
       ],
     );

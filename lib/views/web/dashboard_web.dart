@@ -35,8 +35,7 @@ class _DashboardWebState extends State<DashboardWeb> {
             color: sidebarColor,
             child: Column(
               children: [
-                const SizedBox(height: 30),
-                const Text("Rx Panel Médico", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text("Panel Médico", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 40),
                 _buildMenuItem("Pacientes", Icons.people, true), // Activo
                 _buildMenuItem("Historial", Icons.history, false),
@@ -58,7 +57,7 @@ class _DashboardWebState extends State<DashboardWeb> {
                 children: [
                   // Título
                   const Text("Pacientes", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0D1F46))),
-                  const Text("Gestiona tus pacientes con tratamiento fijo y revisa su adherencia.", style: TextStyle(color: Colors.blueGrey)),
+                  const Text("Gestiona tus pacientes con tratamiento fijo y supervisa la toma de medicamentos.", style: TextStyle(color: Colors.blueGrey)),
                   const SizedBox(height: 20),
 
                   // Barra de búsqueda y Botón
@@ -67,7 +66,7 @@ class _DashboardWebState extends State<DashboardWeb> {
                       Expanded(
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText: "Buscar por nombre o número de control",
+                            hintText: "Buscar por nombre completo o nombre de usuario",
                             prefixIcon: const Icon(Icons.search),
                             filled: true,
                             fillColor: Colors.white,
