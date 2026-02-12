@@ -74,7 +74,7 @@ class _LoginViewWebState extends State<LoginViewWeb> {
 
                       // Descripción
                       Text(
-                        "Gestiona pacientes, tratamientos y alertas desde un panel seguro con entorno clínico en azul.",
+                        "Gestiona pacientes, tratamientos y alertas desde un panel seguro.",
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.blueGrey[600],
