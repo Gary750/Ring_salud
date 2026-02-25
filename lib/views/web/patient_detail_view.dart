@@ -92,7 +92,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
         children: [
           const SizedBox(height: 30),
           const Text(
-            "Rx Panel Médico",
+            "Panel Médico",
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,

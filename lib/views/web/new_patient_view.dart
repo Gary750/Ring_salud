@@ -135,7 +135,7 @@ class _NewPatientViewState extends State<NewPatientView> {
         children: [
           const SizedBox(height: 30),
           const Text(
-            "Rx Panel Médico",
+            "Panel Médico",
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
