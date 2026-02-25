@@ -121,6 +121,10 @@ class _PatientDetailViewState extends State<PatientDetailView> {
             leading: Icon(Icons.notifications, color: Colors.white70),
             title: Text("Alertas", style: TextStyle(color: Colors.white70)),
           ),
+          const ListTile(
+            leading: Icon(Icons.settings, color: Colors.white70),
+            title: Text("Configuración", style: TextStyle(color: Colors.white70)),
+          )
         ],
       ),
     );
