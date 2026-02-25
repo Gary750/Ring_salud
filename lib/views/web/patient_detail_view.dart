@@ -216,7 +216,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                 ),
               ),
               Text(
-                "ID - ${paciente['id_paciente']}",
+                "ID del Paciente: ${paciente['id_paciente']}",
                 style: const TextStyle(
                   color: Colors.blue,
                   fontWeight: FontWeight.bold,
