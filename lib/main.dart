@@ -9,15 +9,15 @@ Future<void> main() async {
 
   //! Inicialización de Supabase
   await Supabase.initialize(
-    url: 'https://your-supabase-url.supabase.co', // Reemplaza con tu URL de Supabase
-    anonKey: 'your-anon-key', // Reemplaza con tu anon key de Supabase
+    url: 'example.supabase.co',
+    anonKey: 'your-anon-key',
   );
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

@@ -123,8 +123,11 @@ class _PatientDetailViewState extends State<PatientDetailView> {
           ),
           const ListTile(
             leading: Icon(Icons.settings, color: Colors.white70),
-            title: Text("Configuración", style: TextStyle(color: Colors.white70)),
-          )
+            title: Text(
+              "Configuración",
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
         ],
       ),
     );
@@ -355,7 +358,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
     );
   }
 
-  // 3. Tabla de Medicamentos (Columna Izquierda Inferior)
+  // 3. Tabla de Medicamentos
   Widget _buildMedicationsCard() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -378,7 +381,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
             ),
           ),
           const Text(
-            "Pauta actual extraída de la base de datos.",
+            "Pauta actual",
             style: TextStyle(color: Colors.blueGrey, fontSize: 13),
           ),
           const Divider(height: 30),
@@ -498,7 +501,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
     );
   }
 
-  // 4. Historial (Visual Mockup por ahora)
+  // 4. Historial
   Widget _buildHistoryCard() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -532,50 +535,164 @@ class _PatientDetailViewState extends State<PatientDetailView> {
           ),
           const Divider(height: 30),
 
-          // Fila simulada 1
-          _buildHistoryRow("Hoy · 07:35", "Enalapril · 10 mg", true),
-          const Divider(),
-          // Fila simulada 2
-          _buildHistoryRow("Ayer · 21:55", "Metformina · 850 mg", false),
+          // --- FUTURE BUILDER PARA EL HISTORIAL ---
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _controller.fetchHistory(widget.paciente['id_paciente']),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              final historial = snapshot.data ?? [];
+
+              if (historial.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text(
+                    "Aún no hay tomas registradas para este paciente.",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                );
+              }
+
+              return Column(
+                children: historial.map((recordatorio) {
+                  // --- Extracción segura de datos ---
+
+                  // Datos del tratamiento anidado
+                  final tratamiento = recordatorio['tratamientos'] ?? {};
+                  final String medicamento =
+                      tratamiento['nombre_medicamento'] ?? 'Desconocido';
+                  final String dosis = tratamiento['dosis'] ?? '';
+
+                  // Fecha de la toma
+                  final DateTime fechaProgramada = DateTime.parse(
+                    recordatorio['fecha_hora_programada'],
+                  ).toLocal();
+                  final String fechaFormateada =
+                      "${fechaProgramada.day}/${fechaProgramada.month}/${fechaProgramada.year}";
+                  final String horaFormateada =
+                      "${fechaProgramada.hour.toString().padLeft(2, '0')}:${fechaProgramada.minute.toString().padLeft(2, '0')}";
+
+                  // Estado de confirmación
+                  final bool confirmado = recordatorio['confirmado'] ?? false;
+
+                  // Leer el array de historial_confirmaciones (Supabase lo devuelve como lista)
+                  final List confirmaciones =
+                      recordatorio['historial_confirmaciones'] ?? [];
+                  String estadoDetalle = confirmado
+                      ? 'Tomado'
+                      : 'No confirmado';
+
+                  if (confirmaciones.isNotEmpty) {
+                    estadoDetalle =
+                        confirmaciones.first['estado'] ?? estadoDetalle;
+                  } else if (!confirmado &&
+                      fechaProgramada
+                          .add(const Duration(hours: 1))
+                          .isBefore(DateTime.now())) {
+                    // Si no está confirmado y ya pasó más de 1 hora
+                    estadoDetalle = 'Omitido';
+                  }
+
+                  return Column(
+                    children: [
+                      _buildHistoryRow(
+                        fecha: "$fechaFormateada · $horaFormateada",
+                        medicina: "$medicamento · $dosis",
+                        estado: estadoDetalle,
+                        confirmado: confirmado,
+                      ),
+                      const Divider(),
+                    ],
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHistoryRow(String fecha, String medicina, bool aTiempo) {
+  // Fila individual dinámica
+  Widget _buildHistoryRow({
+    required String fecha,
+    required String medicina,
+    required String estado,
+    required bool confirmado,
+  }) {
+    // Determinar colores basados en el texto del estado
+    Color badgeColor = Colors.grey;
+    String textoBadge = estado.toUpperCase();
+
+    if (confirmado) {
+      if (estado.toLowerCase().contains("retraso")) {
+        badgeColor = Colors.orange; // Tomado, pero tarde
+      } else {
+        badgeColor = Colors.green; // Tomado a tiempo
+        textoBadge = "A TIEMPO";
+      }
+    } else {
+      if (estado.toLowerCase() == "omitido") {
+        badgeColor = Colors.redAccent; // Se le olvidó
+      } else {
+        badgeColor = Colors.grey; // Pendiente
+        textoBadge = "PENDIENTE";
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Columna Fecha
           SizedBox(
-            width: 80,
+            width: 90,
             child: Text(
               fecha,
-              style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.blueGrey,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
+          // Columna Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   medicina,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
-                    vertical: 2,
+                    vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: aTiempo ? Colors.blue : Colors.orange,
+                    color: badgeColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    aTiempo ? "Tomado a tiempo" : "Confirmado con retraso",
-                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                    textoBadge,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

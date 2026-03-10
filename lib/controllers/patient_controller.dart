@@ -95,19 +95,51 @@ class PatientController {
 
         final int newPatientId = patientData['id_paciente'];
 
-        // 4. Insertar Tratamientos en la tabla 'tratamientos'
+        // 4. Insertar Tratamientos y Generar Recordatorios
         if (treatments.isNotEmpty) {
           for (var t in treatments) {
-            await supabase.from('tratamientos').insert({
-              'id_paciente': newPatientId, // FK vinculando al paciente
+            final int diasDuracion = int.tryParse(t.endDateController.text) ?? 7;
+            final int frecuenciaHoras = int.tryParse(t.frequencyController.text) ?? 8;
+            
+            // Definir fechas del tratamiento
+            final DateTime fechaInicio = DateTime.now(); // Inicia en este momento
+            final DateTime fechaFin = fechaInicio.add(Duration(days: diasDuracion));
+
+            // A. Insertamos el tratamiento y PEDIMOS EL ID DE VUELTA (.select)
+            final tratamientoData = await supabase.from('tratamientos').insert({
+              'id_paciente': newPatientId,
               'nombre_medicamento': t.nameController.text.trim(),
               'dosis': t.doseController.text.trim(),
-              // Convertimos texto a entero para la BD (int4)
-              'frecuencia_horas': int.tryParse(t.frequencyController.text) ?? 8,
-              'fecha_inicio': DateTime.now()
-                  .toIso8601String(), // Fecha actual por defecto
-              'fecha_fin': DateTime.now().add(Duration(days: int.tryParse(t.endDateController.text) ?? 7)).toIso8601String(),
-            });
+              'frecuencia_horas': frecuenciaHoras,
+              'fecha_inicio': fechaInicio.toIso8601String(),
+              'fecha_fin': fechaFin.toIso8601String(),
+            }).select('id_tratamiento').single();
+
+            final int nuevoTratamientoId = tratamientoData['id_tratamiento'];
+
+            // B.Generar la lista de recordatorios
+            List<Map<String, dynamic>> listaRecordatorios = [];
+            DateTime horaTomaActual = fechaInicio;
+
+            // Bucle: Mientras la hora de la toma sea menor a la fecha de fin
+            while (horaTomaActual.isBefore(fechaFin)) {
+              listaRecordatorios.add({
+                'id_tratamiento': nuevoTratamientoId, // Vinculamos al tratamiento
+                'fecha_hora_programada': horaTomaActual.toIso8601String(),
+                'enviado': false,
+                'confirmado': false,
+                // Límite para tomarla: Le damos 1 hora de tolerancia
+                'horario_limite': horaTomaActual.add(const Duration(hours: 1)).toIso8601String(), 
+              });
+
+              // Sumamos las horas de la frecuencia para la siguiente toma (Ej: +8 horas)
+              horaTomaActual = horaTomaActual.add(Duration(hours: frecuenciaHoras));
+            }
+
+            // C. Insertar todos los recordatorios de golpe en la BD (Bulk Insert)
+            if (listaRecordatorios.isNotEmpty) {
+              await supabase.from('recordatorios_medicacion').insert(listaRecordatorios);
+            }
           }
         }
 
