@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../controllers/patient_controller.dart';
 
 class NewPatientView extends StatefulWidget {
-  const NewPatientView({super.key});
+  final VoidCallback onBack; // Recibe la función para cerrarse y volver al Dashboard
+
+  const NewPatientView({super.key, required this.onBack});
 
   @override
   State<NewPatientView> createState() => _NewPatientViewState();
@@ -12,155 +14,109 @@ class _NewPatientViewState extends State<NewPatientView> {
   final PatientController _controller = PatientController();
 
   // Colores extraídos del diseño
-  final sidebarColor = const Color(0xFF041E60);
-  final bgLight = const Color(0xFFF0F4FA);
   final primaryBlue = const Color(0xFF018BF0);
   final textDark = const Color(0xFF0D1F46);
 
   @override
   void initState() {
     super.initState();
+    _controller.addTreatment();
+    _cargarBorrador();
+  }
+
+  void _cargarBorrador() async {
+    await _controller.loadDraft();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgLight,
-      body: Row(
+    // Vista sin Scaffold, actúa como el contenido derecho del Dashboard
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------------- SIDEBAR (Fijo) ----------------
-          _buildSidebar(),
+          // HEADER RECUPERADO (Título y Breadcrumbs)
+          _buildHeader(),
+          const SizedBox(height: 20),
+          
+          Form(
+            key: _controller.formKey,
+            child: Column(
+              children: [
+                // --- TARJETA 1: DATOS BÁSICOS ---
+                _buildSectionCard(
+                  title: "1. Datos del paciente",
+                  subtitle: "Información personal coincidente con la base de datos.",
+                  child: _buildBasicInfoForm(),
+                ),
+                const SizedBox(height: 20),
 
-          // ---------------- CONTENIDO PRINCIPAL (Scrollable) ----------------
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // HEADER: Título y Breadcrumbs
-                  _buildHeader(),
+                // --- TARJETA 2: MEDICACIÓN ---
+                _buildSectionCard(
+                  title: "2. Pauta de medicación",
+                  subtitle: "Configura aquí los medicamentos. El paciente solo podrá confirmar tomas.",
+                  child: _buildMedicationTable(),
+                ),
+                const SizedBox(height: 20),
 
-                  const SizedBox(height: 20),
-
-                  Form(
-                    key: _controller.formKey,
-                    child: Column(
-                      children: [
-                        // --- TARJETA 1: DATOS BÁSICOS ---
-                        _buildSectionCard(
-                          title: "1. Datos del paciente",
-                          subtitle:
-                              "Información personal del paciente.",
-                          child: _buildBasicInfoForm(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // --- TARJETA 2: MEDICACIÓN ---
-                        _buildSectionCard(
-                          title: "2. Pauta de medicación",
-                          subtitle:
-                              "Configura aquí los medicamentos. El paciente solo podrá confirmar tomas.",
-                          child: _buildMedicationTable(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // --- TARJETA 3: CREDENCIALES ---
-                        _buildSectionCard(
-                          title: "3. Credenciales de acceso",
-                          subtitle:
-                              "Asigne el usuario y contraseña",
-                          child: _buildCredentialsForm(),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // FOOTER: Botones de Acción
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "Guardar borrador",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          bool success = await _controller.createPatient(
-                            context,
-                          );
-                          if (success && mounted) Navigator.pop(context);
-                        },
-                        icon: const Icon(Icons.save_as),
-                        label: const Text("Guardar y activar tratamiento"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryBlue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 50),
-                ],
-              ),
+                // --- TARJETA 3: CREDENCIALES ---
+                _buildSectionCard(
+                  title: "3. Credenciales de acceso",
+                  subtitle: "Asigne el usuario y contraseña para la base de datos.",
+                  child: _buildCredentialsForm(),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ======================================================
-  //              WIDGETS DE LA ESTRUCTURA
-  // ======================================================
-
-  Widget _buildSidebar() {
-    return Container(
-      width: 250,
-      color: sidebarColor,
-      child: Column(
-        children: [
+          
           const SizedBox(height: 30),
-          const Text(
-            "Panel Médico",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+
+          // FOOTER RECUPERADO: Botones de Acción
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () async {
+                  await _controller.saveDraft();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Borrador guardado. Puedes volver más tarde."), backgroundColor: Colors.blueGrey)
+                    );
+                    widget.onBack(); // Cierra la vista
+                  }
+                },
+                child: const Text(
+                  "Guardar borrador",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              const SizedBox(width: 20),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  bool success = await _controller.createPatient(context);
+                  if (success && mounted) widget.onBack(); // Cierra la vista al guardar
+                },
+                icon: const Icon(Icons.save_as),
+                label: const Text("Guardar y activar tratamiento"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 50),
-          _buildMenuRow(Icons.people, "Pacientes", true), // Activo
-          _buildMenuRow(Icons.history, "Historial", false),
-          _buildMenuRow(Icons.notifications, "Alertas", false),
-          _buildMenuRow(Icons.settings, "Configuración", false),
         ],
       ),
     );
   }
 
-  Widget _buildMenuRow(IconData icon, String text, bool isActive) {
-    return Container(
-      color: isActive ? Colors.blue.withOpacity(0.2) : Colors.transparent,
-      child: ListTile(
-        leading: Icon(icon, color: Colors.white),
-        title: Text(text, style: const TextStyle(color: Colors.white)),
-      ),
-    );
-  }
+  // ======================================================
+  //               WIDGETS DE LA ESTRUCTURA
+  // ======================================================
 
   Widget _buildHeader() {
     return Row(
@@ -190,10 +146,7 @@ class _NewPatientViewState extends State<NewPatientView> {
                 ),
                 const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.blue,
                     borderRadius: BorderRadius.circular(10),
@@ -209,7 +162,7 @@ class _NewPatientViewState extends State<NewPatientView> {
         ),
         const Spacer(),
         IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: widget.onBack,
           icon: const Icon(Icons.close),
           tooltip: "Cancelar",
         ),
@@ -258,7 +211,7 @@ class _NewPatientViewState extends State<NewPatientView> {
   }
 
   // ======================================================
-  //              FORMULARIOS INTERNOS
+  //               FORMULARIOS INTERNOS
   // ======================================================
 
   Widget _buildBasicInfoForm() {
@@ -302,15 +255,13 @@ class _NewPatientViewState extends State<NewPatientView> {
           ],
         ),
         const SizedBox(height: 20),
-
-        // --- NUEVA FILA: Campos faltantes en la BD ---
         Row(
           children: [
             Expanded(
               child: _buildInput(
                 "Correo electrónico *", 
                 _controller.emailController,
-                "Necesario para iniciar sesión",
+                "Necesario para notificaciones",
               ),
             ),
             const SizedBox(width: 20),
@@ -324,7 +275,6 @@ class _NewPatientViewState extends State<NewPatientView> {
           ],
         ),
         const SizedBox(height: 20),
-
         _buildInput(
           "Alergias (Opcional)",
           _controller.allergiesController,
@@ -334,10 +284,9 @@ class _NewPatientViewState extends State<NewPatientView> {
     );
   }
 
-Widget _buildMedicationTable() {
+  Widget _buildMedicationTable() {
     return Column(
       children: [
-        // Encabezados
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           color: Colors.blue.withOpacity(0.05),
@@ -345,14 +294,13 @@ Widget _buildMedicationTable() {
             children: [
               Expanded(flex: 3, child: Text("  Medicamento", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
               Expanded(flex: 2, child: Text("Dosis", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
-              Expanded(flex: 2, child: Text("Frecuencia (Horas)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
-              Expanded(flex: 2, child: Text("Duracion (Dias)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
-              SizedBox(width: 50), // Espacio para el botón eliminar
+              Expanded(flex: 2, child: Text("Frec. (Horas)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
+              Expanded(flex: 2, child: Text("Duración (Días)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))),
+              SizedBox(width: 40),
             ],
           ),
         ),
         
-        // Lista Dinámica
         ..._controller.treatments.asMap().entries.map((entry) {
           int index = entry.key;
           TreatmentForm form = entry.value;
@@ -361,7 +309,6 @@ Widget _buildMedicationTable() {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                // Input Nombre Medicamento
                 Expanded(
                   flex: 3,
                   child: TextFormField(
@@ -371,8 +318,6 @@ Widget _buildMedicationTable() {
                   ),
                 ),
                 const SizedBox(width: 10),
-                
-                // Input Dosis
                 Expanded(
                   flex: 2,
                   child: TextFormField(
@@ -380,10 +325,7 @@ Widget _buildMedicationTable() {
                     decoration: _tableInputDeco("Ej. 500mg"),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-                
-                // Input Frecuencia (Solo números para int4)
                 Expanded(
                   flex: 2,
                   child: TextFormField(
@@ -393,10 +335,7 @@ Widget _buildMedicationTable() {
                     validator: (v) => int.tryParse(v!) == null ? "#" : null,
                   ),
                 ),
-                
                 const SizedBox(width: 10),
-
-                //Input De la duracion en dias
                 Expanded(
                   flex: 2,
                   child: TextFormField(
@@ -406,8 +345,6 @@ Widget _buildMedicationTable() {
                     validator: (v) => int.tryParse(v!) == null ? "#" : null,
                   ),
                 ),
-                const SizedBox(width: 10),
-                // Botón Eliminar Fila
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: () {
@@ -422,8 +359,6 @@ Widget _buildMedicationTable() {
         }),
 
         const Divider(),
-        
-        // Botón Añadir Tratamiento
         Center(
           child: TextButton.icon(
             onPressed: () {
@@ -432,14 +367,13 @@ Widget _buildMedicationTable() {
               });
             },
             icon: const Icon(Icons.add_circle_outline),
-            label: const Text("Añadir otro medicamento"),
+            label: const Text("Añadir medicamento a la lista"),
           ),
         )
       ],
     );
   }
 
-  // Decoración pequeña para inputs de tabla
   InputDecoration _tableInputDeco(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -456,23 +390,35 @@ Widget _buildMedicationTable() {
         Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInput("Usuario*", _controller.usernameController, "Ej. mgomez68")
-                ],
-              ),
+              child: _buildInput("Usuario *", _controller.usernameController, "Ej. mgomez68"),
             ),
             const SizedBox(width: 30),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInput("Contraseña*", _controller.passwordController, "••••••••")
-                ],
-              ),
+              child: _buildInput("Contraseña *", _controller.passwordController, "••••••••"),
             ),
           ],
+        ),
+        const SizedBox(height: 20),
+        
+        // CAJA INFORMATIVA RECUPERADA
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue),
+              SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  "Estos datos se guardan directamente en las columnas 'usuario' y 'contraseña' de la tabla Paciente.",
+                  style: TextStyle(color: Colors.blueGrey),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -490,7 +436,7 @@ Widget _buildMedicationTable() {
           label,
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: Color(0xFF0D1F46),
+            color: Color(0xFF0D1F46), // Color oscuro específico
           ),
         ),
         const SizedBox(height: 8),
@@ -513,8 +459,7 @@ Widget _buildMedicationTable() {
             ),
           ),
           validator: (v) {
-            if (label.contains("*") && (v == null || v.isEmpty))
-              return "Requerido";
+            if (label.contains("*") && (v == null || v.isEmpty)) return "Requerido";
             return null;
           },
         ),

@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import '../../controllers/patient_detail_controller.dart';
 
 class PatientDetailView extends StatefulWidget {
-  final Map<String, dynamic> paciente; // Recibe los datos desde el Dashboard
+  final Map<String, dynamic> paciente;
+  final VoidCallback
+  onBack; // Recibe la función para cerrarse y volver al Dashboard
 
-  const PatientDetailView({super.key, required this.paciente});
+  const PatientDetailView({
+    super.key,
+    required this.paciente,
+    required this.onBack,
+  });
 
   @override
   State<PatientDetailView> createState() => _PatientDetailViewState();
@@ -12,127 +18,60 @@ class PatientDetailView extends StatefulWidget {
 
 class _PatientDetailViewState extends State<PatientDetailView> {
   final PatientDetailController _controller = PatientDetailController();
-  bool _obscurePassword = true; // Para ocultar/mostrar la contraseña
+  bool _obscurePassword = true;
 
-  // Colores de la paleta
-  final sidebarColor = const Color(0xFF041E60);
+  // Colores extraídos de tu diseño
   final bgLight = const Color(0xFFF4F7FC);
   final primaryBlue = const Color(0xFF018BF0);
   final textDark = const Color(0xFF0D1F46);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgLight,
-      body: Row(
+    // Es una sub-vista, por lo que usamos SingleChildScrollView en lugar de Scaffold
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // SIDEBAR
-          _buildSidebar(),
+          // 1. HEADER RECUPERADO
+          _buildHeader(),
+          const SizedBox(height: 20),
 
-          // CONTENIDO PRINCIPAL
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-
-                  // ESTRUCTURA DE 2 COLUMNAS (Estilo Dashboard)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- COLUMNA IZQUIERDA (Más ancha 60%) ---
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          children: [
-                            _buildPatientInfoCard(),
-                            const SizedBox(height: 20),
-                            _buildMedicationsCard(),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      // --- COLUMNA DERECHA (Más estrecha 40%) ---
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          children: [
-                            _buildAccessInfoCard(),
-                            const SizedBox(height: 20),
-                            _buildHistoryCard(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==============================================================
-  // HEADER Y SIDEBAR
-  // ==============================================================
-
-  Widget _buildSidebar() {
-    return Container(
-      width: 250,
-      color: sidebarColor,
-      child: Column(
-        children: [
-          const SizedBox(height: 30),
-          const Text(
-            "Panel Médico",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 50),
-          Container(
-            color: Colors.blue.withOpacity(0.2),
-            child: const ListTile(
-              leading: Icon(Icons.people, color: Colors.white),
-              title: Text(
-                "Pacientes",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+          // 2. ESTRUCTURA DE 2 COLUMNAS
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 6,
+                child: Column(
+                  children: [
+                    _buildPatientInfoCard(),
+                    const SizedBox(height: 20),
+                    _buildMedicationsCard(),
+                  ],
                 ),
               ),
-            ),
-          ),
-          const ListTile(
-            leading: Icon(Icons.history, color: Colors.white70),
-            title: Text("Historial", style: TextStyle(color: Colors.white70)),
-          ),
-          const ListTile(
-            leading: Icon(Icons.notifications, color: Colors.white70),
-            title: Text("Alertas", style: TextStyle(color: Colors.white70)),
-          ),
-          const ListTile(
-            leading: Icon(Icons.settings, color: Colors.white70),
-            title: Text(
-              "Configuración",
-              style: TextStyle(color: Colors.white70),
-            ),
+              const SizedBox(width: 20),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  children: [
+                    _buildAccessInfoCard(),
+                    const SizedBox(height: 20),
+                    _buildHistoryCard(),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  // ==============================================================
+  // HEADER (RECUPERADO CON SUS BOTONES)
+  // ==============================================================
   Widget _buildHeader() {
     final nombre = widget.paciente['nombre'] ?? 'Sin nombre';
 
@@ -166,14 +105,20 @@ class _PatientDetailViewState extends State<PatientDetailView> {
               ),
             ),
             const Spacer(),
+
+            // Botón Volver a lista
             TextButton.icon(
-              onPressed: () => Navigator.pop(context),
+              onPressed: widget.onBack, // <--- Cierra la vista suavemente
               icon: const Icon(Icons.arrow_back, color: Colors.blue),
               label: const Text("Volver a lista"),
             ),
             const SizedBox(width: 15),
+
+            // BOTÓN RECUPERADO: Ver alertas
             OutlinedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                // TODO: Funcionalidad futura de alertas
+              },
               icon: const Icon(Icons.notifications_active_outlined),
               label: const Text("Ver alertas de este paciente"),
             ),
@@ -187,17 +132,23 @@ class _PatientDetailViewState extends State<PatientDetailView> {
             fontWeight: FontWeight.w500,
           ),
         ),
+        const SizedBox(height: 10),
+        const Text(
+          "Revisa la información clínica, edita la pauta de medicación y sigue las confirmaciones desde la app del paciente.",
+          style: TextStyle(color: Colors.blueGrey, fontSize: 13),
+        ),
       ],
     );
   }
 
   // ==============================================================
-  // TARJETAS (CARDS)
+  // TARJETAS (RECUPERADAS CON TODA SU INFORMACIÓN)
   // ==============================================================
 
-  // 1. Ficha del Paciente (Columna Izquierda Superior)
+  // 1. Ficha del Paciente
   Widget _buildPatientInfoCard() {
     final paciente = widget.paciente;
+    final alergias = paciente['alergias'] ?? '';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -223,7 +174,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                 ),
               ),
               Text(
-                "ID del Paciente: ${paciente['id_paciente']}",
+                "ID - ${paciente['id_paciente'] ?? '-'}",
                 style: const TextStyle(
                   color: Colors.blue,
                   fontWeight: FontWeight.bold,
@@ -232,8 +183,8 @@ class _PatientDetailViewState extends State<PatientDetailView> {
             ],
           ),
           const Text(
-            "Datos clínicos de referencia.",
-            style: TextStyle(color: Colors.blueGrey, fontSize: 13),
+            "Datos clínicos de referencia. El paciente solo los puede leer desde su app.",
+            style: TextStyle(color: Colors.blue, fontSize: 12),
           ),
           const Divider(height: 30),
 
@@ -270,19 +221,44 @@ class _PatientDetailViewState extends State<PatientDetailView> {
               ),
             ],
           ),
+
           const SizedBox(height: 20),
-          _buildInfoData(
+
+          // ALERGIAS CON ESTILO DE BADGE ROJO (Como en tu diseño)
+          const Text(
             "Alergias registradas",
-            paciente['alergias'] == null || paciente['alergias'].isEmpty
-                ? 'Ninguna'
-                : paciente['alergias'],
+            style: TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
           ),
+          const SizedBox(height: 5),
+          if (alergias.isNotEmpty && alergias.toLowerCase() != 'ninguna')
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                alergias,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          else
+            const Text("Ninguna", style: TextStyle(fontSize: 16)),
+
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // 2. Información de Acceso (Columna Derecha Superior)
+  // 2. Información de Acceso
   Widget _buildAccessInfoCard() {
     final paciente = widget.paciente;
 
@@ -298,21 +274,24 @@ class _PatientDetailViewState extends State<PatientDetailView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Información de acceso",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: textDark,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Información de acceso",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+            ],
           ),
+          _buildInfoData("Nombre de usuario", paciente['usuario'] ?? '-'),
           const Text(
-            "Credenciales para la app.",
-            style: TextStyle(color: Colors.blueGrey, fontSize: 13),
+            "Usa este nombre para identificar al paciente en la app.",
+            style: TextStyle(color: Colors.blueGrey, fontSize: 11),
           ),
-          const Divider(height: 30),
-
-          _buildInfoData("Usuario", paciente['usuario'] ?? '-'),
           const SizedBox(height: 20),
 
           const Text(
@@ -341,18 +320,13 @@ class _PatientDetailViewState extends State<PatientDetailView> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              "Si modificas la contraseña, avisa al paciente de inmediato.",
-              style: TextStyle(color: Colors.blueGrey, fontSize: 12),
-            ),
+          const SizedBox(height: 5),
+          const Text(
+            "En la app del paciente se muestra solo una pista.",
+            style: TextStyle(color: Colors.blueGrey, fontSize: 11),
           ),
+
+          const SizedBox(height: 15),
         ],
       ),
     );
@@ -372,30 +346,47 @@ class _PatientDetailViewState extends State<PatientDetailView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Horarios de medicamentos",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: textDark,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Horarios de medicamentos",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+            ],
           ),
           const Text(
-            "Pauta actual",
-            style: TextStyle(color: Colors.blueGrey, fontSize: 13),
+            "Solo el médico puede cambiar estos datos. El paciente solo confirma tomas.",
+            style: TextStyle(color: Colors.blue, fontSize: 12),
           ),
           const Divider(height: 30),
 
-          // FutureBuilder para cargar de la tabla 'tratamientos'
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _controller.fetchTreatments(widget.paciente['id_paciente']),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting)
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
 
               final tratamientos = snapshot.data ?? [];
-              if (tratamientos.isEmpty)
-                return const Text("No hay tratamientos registrados.");
+
+              if (tratamientos.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    "No hay tratamientos activos en este momento.",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                );
+              }
 
               return Column(
                 children: [
@@ -424,7 +415,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                       Expanded(
                         flex: 2,
                         child: Text(
-                          "Frec. (Horas)",
+                          "Frecuencia",
                           style: TextStyle(
                             color: Colors.blue,
                             fontWeight: FontWeight.bold,
@@ -477,22 +468,66 @@ class _PatientDetailViewState extends State<PatientDetailView> {
               );
             },
           ),
+
           const SizedBox(height: 20),
+
+          // BOTONES ACTIVOS AQUÍ
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: () {},
-                child: const Text("Desactivar tratamiento"),
+                onPressed: () async {
+                  bool confirmar =
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("¿Detener tratamiento?"),
+                          content: const Text(
+                            "Se cancelarán todos los recordatorios futuros. El historial pasado se conservará.",
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text("Cancelar"),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                "Sí, detener",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ) ??
+                      false;
+
+                  if (confirmar) {
+                    bool exito = await _controller.deactivateAllTreatments(
+                      widget.paciente['id_paciente'],
+                    );
+                    if (exito) setState(() {});
+                  }
+                },
+                child: const Text(
+                  "Desactivar tratamiento",
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
+
               const SizedBox(width: 15),
-              ElevatedButton(
-                onPressed: () {},
+
+              ElevatedButton.icon(
+                onPressed: () => _mostrarDialogoNuevaPauta(),
+                icon: const Icon(Icons.add),
+                label: const Text("Añadir medicamento"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text("Editar pauta"),
               ),
             ],
           ),
@@ -501,7 +536,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
     );
   }
 
-  // 4. Historial
+  // 4. Historial de Confirmaciones
   Widget _buildHistoryCard() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -518,43 +553,66 @@ class _PatientDetailViewState extends State<PatientDetailView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Historial",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
+              Expanded(
+                child: Text(
+                  "Historial de confirmaciones",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textDark,
+                  ),
                 ),
               ),
-              const Icon(Icons.filter_list, color: Colors.blue),
+              // BOTÓN RECUPERADO: Filtro "Hoy / Últimos 7 días"
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.filter_alt_outlined,
+                      size: 16,
+                      color: Colors.blue,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      "Hoy · 7 días",
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 5),
           const Text(
-            "Últimas confirmaciones desde la app.",
-            style: TextStyle(color: Colors.blueGrey, fontSize: 13),
+            "Listado cronológico de tomas confirmadas o no desde la app.",
+            style: TextStyle(color: Colors.blue, fontSize: 12),
           ),
           const Divider(height: 30),
 
-          // --- FUTURE BUILDER PARA EL HISTORIAL ---
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _controller.fetchHistory(widget.paciente['id_paciente']),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-
+              if (snapshot.connectionState == ConnectionState.waiting)
+                return const Center(child: CircularProgressIndicator());
               final historial = snapshot.data ?? [];
 
               if (historial.isEmpty) {
                 return const Padding(
-                  padding: EdgeInsets.all(20.0),
+                  padding: EdgeInsets.symmetric(vertical: 20),
                   child: Text(
-                    "Aún no hay tomas registradas para este paciente.",
+                    "Aún no hay tomas registradas.",
                     style: TextStyle(color: Colors.grey),
                   ),
                 );
@@ -562,97 +620,157 @@ class _PatientDetailViewState extends State<PatientDetailView> {
 
               return Column(
                 children: historial.map((recordatorio) {
-                  // --- Extracción segura de datos ---
-
-                  // Datos del tratamiento anidado
                   final tratamiento = recordatorio['tratamientos'] ?? {};
-                  final String medicamento =
-                      tratamiento['nombre_medicamento'] ?? 'Desconocido';
-                  final String dosis = tratamiento['dosis'] ?? '';
-
-                  // Fecha de la toma
-                  final DateTime fechaProgramada = DateTime.parse(
+                  final DateTime fechaP = DateTime.parse(
                     recordatorio['fecha_hora_programada'],
                   ).toLocal();
-                  final String fechaFormateada =
-                      "${fechaProgramada.day}/${fechaProgramada.month}/${fechaProgramada.year}";
-                  final String horaFormateada =
-                      "${fechaProgramada.hour.toString().padLeft(2, '0')}:${fechaProgramada.minute.toString().padLeft(2, '0')}";
-
-                  // Estado de confirmación
-                  final bool confirmado = recordatorio['confirmado'] ?? false;
-
-                  // Leer el array de historial_confirmaciones (Supabase lo devuelve como lista)
+                  final bool conf = recordatorio['confirmado'] ?? false;
                   final List confirmaciones =
                       recordatorio['historial_confirmaciones'] ?? [];
-                  String estadoDetalle = confirmado
-                      ? 'Tomado'
-                      : 'No confirmado';
-
-                  if (confirmaciones.isNotEmpty) {
-                    estadoDetalle =
-                        confirmaciones.first['estado'] ?? estadoDetalle;
-                  } else if (!confirmado &&
-                      fechaProgramada
+                  String est = conf ? 'Tomado' : 'No confirmado';
+                  if (confirmaciones.isNotEmpty)
+                    est = confirmaciones.first['estado'] ?? est;
+                  else if (!conf &&
+                      fechaP
                           .add(const Duration(hours: 1))
-                          .isBefore(DateTime.now())) {
-                    // Si no está confirmado y ya pasó más de 1 hora
-                    estadoDetalle = 'Omitido';
-                  }
+                          .isBefore(DateTime.now()))
+                    est = 'Omitido';
 
-                  return Column(
-                    children: [
-                      _buildHistoryRow(
-                        fecha: "$fechaFormateada · $horaFormateada",
-                        medicina: "$medicamento · $dosis",
-                        estado: estadoDetalle,
-                        confirmado: confirmado,
-                      ),
-                      const Divider(),
-                    ],
+                  return _buildHistoryRow(
+                    fecha:
+                        "${fechaP.day}/${fechaP.month} · ${fechaP.hour}:${fechaP.minute.toString().padLeft(2, '0')}",
+                    medicina:
+                        "${tratamiento['nombre_medicamento']} · ${tratamiento['dosis']}",
+                    estado: est,
+                    confirmado: conf,
                   );
                 }).toList(),
               );
             },
+          ),
+
+          const Divider(),
+          // TEXTO INFERIOR RECUPERADO
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              "Ver detalle en módulo de Historial",
+              style: TextStyle(fontSize: 12),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Fila individual dinámica
+  // ==============================================================
+  // MODAL PARA AÑADIR MEDICAMENTOS (FUNCIONAL)
+  // ==============================================================
+  void _mostrarDialogoNuevaPauta() {
+    final nameCtrl = TextEditingController();
+    final doseCtrl = TextEditingController();
+    final freqCtrl = TextEditingController();
+    final daysCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Añadir medicamento"),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: "Medicamento",
+                    hintText: "Ej. Paracetamol",
+                  ),
+                  validator: (v) => v!.isEmpty ? "Requerido" : null,
+                ),
+                TextFormField(
+                  controller: doseCtrl,
+                  decoration: const InputDecoration(
+                    labelText: "Dosis",
+                    hintText: "Ej. 500mg",
+                  ),
+                  validator: (v) => v!.isEmpty ? "Requerido" : null,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: freqCtrl,
+                        decoration: const InputDecoration(
+                          labelText: "Frec. (Horas)",
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? "*" : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: daysCtrl,
+                        decoration: const InputDecoration(
+                          labelText: "Duración (Días)",
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? "*" : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(context);
+                  bool exito = await _controller.addSingleTreatment(
+                    widget.paciente['id_paciente'],
+                    nameCtrl.text,
+                    doseCtrl.text,
+                    int.parse(freqCtrl.text),
+                    int.parse(daysCtrl.text),
+                  );
+                  if (exito) setState(() {});
+                }
+              },
+              child: const Text("Guardar cambios"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- Helpers visuales ---
   Widget _buildHistoryRow({
     required String fecha,
     required String medicina,
     required String estado,
     required bool confirmado,
   }) {
-    // Determinar colores basados en el texto del estado
-    Color badgeColor = Colors.grey;
-    String textoBadge = estado.toUpperCase();
-
-    if (confirmado) {
-      if (estado.toLowerCase().contains("retraso")) {
-        badgeColor = Colors.orange; // Tomado, pero tarde
-      } else {
-        badgeColor = Colors.green; // Tomado a tiempo
-        textoBadge = "A TIEMPO";
-      }
-    } else {
-      if (estado.toLowerCase() == "omitido") {
-        badgeColor = Colors.redAccent; // Se le olvidó
-      } else {
-        badgeColor = Colors.grey; // Pendiente
-        textoBadge = "PENDIENTE";
-      }
-    }
-
+    Color badgeColor = confirmado
+        ? (estado.toLowerCase().contains("retraso")
+              ? Colors.orange
+              : Colors.green)
+        : (estado.toLowerCase() == "omitido" ? Colors.redAccent : Colors.grey);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Columna Fecha
           SizedBox(
             width: 90,
             child: Text(
@@ -664,7 +782,6 @@ class _PatientDetailViewState extends State<PatientDetailView> {
               ),
             ),
           ),
-          // Columna Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,7 +804,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    textoBadge,
+                    estado.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -703,7 +820,6 @@ class _PatientDetailViewState extends State<PatientDetailView> {
     );
   }
 
-  // --- Helper general ---
   Widget _buildInfoData(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

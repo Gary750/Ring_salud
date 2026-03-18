@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; //! Necesario para detectar la plataforma
-import 'views/mobile/login_view_mobile.dart'; //! login de paciente
-import 'views/web/login_view_web.dart';        //! Login del doctor
 import 'package:supabase_flutter/supabase_flutter.dart'; //! Supabase
+import 'views/shared/auth_gate.dart'; //! Pantalla de enrutamiento inteligente
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   //! Inicialización de Supabase
   await Supabase.initialize(
-    url: 'example.supabase.co',
-    anonKey: 'your-anon-key',
+    url: 'https://your-project.supabase.co', // Reemplaza con tu URL de Supabase
+    anonKey: 'your-anon-key', // Reemplaza con tu clave anónima de Supabase
+
   );
   runApp(MyApp());
 }
@@ -29,9 +28,7 @@ class MyApp extends StatelessWidget {
       ),
       
       // 3. Lógica de selección de plataforma
-      home: kIsWeb 
-          ? const LoginViewWeb()     // Si se abre en navegador -> Va al panel del Doctor
-          : const LoginViewMobile(), // Si es Android/iOS -> Va al Login del Paciente
+      home: const AuthGate(),
     );
   }
 }

@@ -1,11 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-//Clase Tratammientos
+// --- CLASE AUXILIAR DE TRATAMIENTOS ---
 class TreatmentForm {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController doseController = TextEditingController();
-  final TextEditingController frequencyController =TextEditingController(); 
+  final TextEditingController frequencyController = TextEditingController(); 
   final TextEditingController endDateController = TextEditingController();
 
   void dispose() {
@@ -16,6 +18,7 @@ class TreatmentForm {
   }
 }
 
+// --- CONTROLADOR PRINCIPAL ---
 class PatientController {
   // --- Datos Clínicos ---
   final TextEditingController nameController = TextEditingController();
@@ -30,13 +33,15 @@ class PatientController {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  //! Lista de dinamica de tratamientos
+  //! Lista dinámica de tratamientos
   List<TreatmentForm> treatments = [];
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final supabase = Supabase.instance.client;
 
-  // Métodos para la vista
+  // ==========================================
+  // FUNCIONES PARA LA VISTA
+  // ==========================================
   void addTreatment() {
     treatments.add(TreatmentForm());
   }
@@ -46,20 +51,64 @@ class PatientController {
     treatments.removeAt(index);
   }
 
+  // ==========================================
+  // FUNCIONES PARA EL BORRADOR (SHARED_PREFS)
+  // ==========================================
+  
+  // 1. Guarda los datos actuales en el navegador
+  Future<void> saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draftData = {
+      'nombre': nameController.text,
+      'edad': ageController.text,
+      'enfermedad': diagnosisController.text,
+      'telefono': phoneController.text,
+      'correo': emailController.text,
+      'emergencia': emergencyPhoneController.text,
+      'alergias': allergiesController.text,
+      'usuario': usernameController.text,
+      'contrasena': passwordController.text,
+    };
+    // Convertir el mapa a un string JSON y guardarlo
+    await prefs.setString('paciente_draft', jsonEncode(draftData));
+  }
+
+  // 2. Carga los datos guardados
+  Future<void> loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draftString = prefs.getString('paciente_draft');
+    
+    if (draftString != null) {
+      final draftData = jsonDecode(draftString);
+      nameController.text = draftData['nombre'] ?? '';
+      ageController.text = draftData['edad'] ?? '';
+      diagnosisController.text = draftData['enfermedad'] ?? '';
+      phoneController.text = draftData['telefono'] ?? '';
+      emailController.text = draftData['correo'] ?? '';
+      emergencyPhoneController.text = draftData['emergencia'] ?? '';
+      allergiesController.text = draftData['alergias'] ?? '';
+      usernameController.text = draftData['usuario'] ?? '';
+      passwordController.text = draftData['contrasena'] ?? '';
+    }
+  }
+
+  // 3. Elimina el borrador (cuando ya se guardó en BD o se cancela)
+  Future<void> clearDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('paciente_draft');
+  }
+
+  // ==========================================
+  // LÓGICA DE BASE DE DATOS
+  // ==========================================
   Future<bool> createPatient(BuildContext context) async {
     if (!formKey.currentState!.validate()) return false;
-
-
-    if (treatments.isEmpty) {
-      _mostrarSnack(context, "Agregue al menos un medicamento", esError: true);
-      return false;
-    } 
 
     try {
       final userEmail = supabase.auth.currentUser?.email;
       if (userEmail == null) throw "No hay sesión activa";
 
-      // 1. Obtener ID Médico
+      // 1. Obtener ID Médico actual
       final doctorData = await supabase
           .from('medico')
           .select('id_medico')
@@ -67,89 +116,76 @@ class PatientController {
           .single();
       final int doctorId = doctorData['id_medico'];
 
-      // 2. Auth (Login del Paciente)
-      final AuthResponse res = await supabase.auth.signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-        data: {'rol': 'paciente'},
-      );
+      // 2. Insertar Paciente directamente en tu tabla
+      final patientData = await supabase
+          .from('paciente')
+          .insert({
+            'id_medico': doctorId,
+            'nombre': nameController.text.trim(),
+            'edad': int.tryParse(ageController.text) ?? 0,
+            'telefono': phoneController.text.trim(),
+            'correo': emailController.text.trim(),
+            'enfermedad': diagnosisController.text.trim(),
+            'alergias': allergiesController.text.trim(),
+            'usuario': usernameController.text.trim(),
+            'contrasena': passwordController.text.trim(),
+            'numero_emergencia': emergencyPhoneController.text.trim(),
+          })
+          .select('id_paciente')
+          .single();
 
-      if (res.user != null) {
-        // 3. Insertar Paciente y RECUPERAR el ID generado (select())
-        final patientData = await supabase
-            .from('paciente')
-            .insert({
-              'id_medico': doctorId,
-              'nombre': nameController.text.trim(),
-              'edad': int.tryParse(ageController.text) ?? 0,
-              'telefono': phoneController.text.trim(),
-              'correo': emailController.text.trim(),
-              'enfermedad': diagnosisController.text.trim(),
-              'alergias': allergiesController.text.trim(),
-              'usuario': usernameController.text.trim(),
-              'contrasena': passwordController.text.trim(),
-              'numero_emergencia': emergencyPhoneController.text.trim(),
-            })
-            .select('id_paciente')
-            .single(); // <--- Importante: .select().single()
+      final int newPatientId = patientData['id_paciente'];
 
-        final int newPatientId = patientData['id_paciente'];
+      // 3. Insertar Tratamientos y Generar Recordatorios
+      if (treatments.isNotEmpty) {
+        for (var t in treatments) {
+          final int diasDuracion = int.tryParse(t.endDateController.text) ?? 7;
+          final int frecuenciaHoras = int.tryParse(t.frequencyController.text) ?? 8;
+          
+          final DateTime fechaInicio = DateTime.now();
+          final DateTime fechaFin = fechaInicio.add(Duration(days: diasDuracion));
 
-        // 4. Insertar Tratamientos y Generar Recordatorios
-        if (treatments.isNotEmpty) {
-          for (var t in treatments) {
-            final int diasDuracion = int.tryParse(t.endDateController.text) ?? 7;
-            final int frecuenciaHoras = int.tryParse(t.frequencyController.text) ?? 8;
-            
-            // Definir fechas del tratamiento
-            final DateTime fechaInicio = DateTime.now(); // Inicia en este momento
-            final DateTime fechaFin = fechaInicio.add(Duration(days: diasDuracion));
+          // A. Insertar tratamiento
+          final tratamientoData = await supabase.from('tratamientos').insert({
+            'id_paciente': newPatientId,
+            'nombre_medicamento': t.nameController.text.trim(),
+            'dosis': t.doseController.text.trim(),
+            'frecuencia_horas': frecuenciaHoras,
+            'fecha_inicio': fechaInicio.toIso8601String(),
+            'fecha_fin': fechaFin.toIso8601String(),
+          }).select('id_tratamiento').single();
 
-            // A. Insertamos el tratamiento y PEDIMOS EL ID DE VUELTA (.select)
-            final tratamientoData = await supabase.from('tratamientos').insert({
-              'id_paciente': newPatientId,
-              'nombre_medicamento': t.nameController.text.trim(),
-              'dosis': t.doseController.text.trim(),
-              'frecuencia_horas': frecuenciaHoras,
-              'fecha_inicio': fechaInicio.toIso8601String(),
-              'fecha_fin': fechaFin.toIso8601String(),
-            }).select('id_tratamiento').single();
+          final int nuevoTratamientoId = tratamientoData['id_tratamiento'];
 
-            final int nuevoTratamientoId = tratamientoData['id_tratamiento'];
+          // B. Generar recordatorios
+          List<Map<String, dynamic>> listaRecordatorios = [];
+          DateTime horaTomaActual = fechaInicio;
 
-            // B.Generar la lista de recordatorios
-            List<Map<String, dynamic>> listaRecordatorios = [];
-            DateTime horaTomaActual = fechaInicio;
+          while (horaTomaActual.isBefore(fechaFin)) {
+            listaRecordatorios.add({
+              'id_tratamiento': nuevoTratamientoId,
+              'fecha_hora_programada': horaTomaActual.toIso8601String(),
+              'enviado': false,
+              'confirmado': false,
+              'horario_limite': horaTomaActual.add(const Duration(hours: 1)).toIso8601String(), 
+            });
+            horaTomaActual = horaTomaActual.add(Duration(hours: frecuenciaHoras));
+          }
 
-            // Bucle: Mientras la hora de la toma sea menor a la fecha de fin
-            while (horaTomaActual.isBefore(fechaFin)) {
-              listaRecordatorios.add({
-                'id_tratamiento': nuevoTratamientoId, // Vinculamos al tratamiento
-                'fecha_hora_programada': horaTomaActual.toIso8601String(),
-                'enviado': false,
-                'confirmado': false,
-                // Límite para tomarla: Le damos 1 hora de tolerancia
-                'horario_limite': horaTomaActual.add(const Duration(hours: 1)).toIso8601String(), 
-              });
-
-              // Sumamos las horas de la frecuencia para la siguiente toma (Ej: +8 horas)
-              horaTomaActual = horaTomaActual.add(Duration(hours: frecuenciaHoras));
-            }
-
-            // C. Insertar todos los recordatorios de golpe en la BD (Bulk Insert)
-            if (listaRecordatorios.isNotEmpty) {
-              await supabase.from('recordatorios_medicacion').insert(listaRecordatorios);
-            }
+          // C. Insertar masivo
+          if (listaRecordatorios.isNotEmpty) {
+            await supabase.from('recordatorios_medicacion').insert(listaRecordatorios);
           }
         }
-
-        _mostrarSnack(
-          context,
-          "Paciente y tratamientos registrados",
-          esError: false,
-        );
-        return true;
       }
+
+      // --- IMPORTANTE: LIMPIAR BORRADOR ---
+      // Como el paciente se guardó exitosamente, borramos el borrador local
+      await clearDraft();
+
+      _mostrarSnack(context, "Paciente y tratamientos registrados con éxito", esError: false);
+      return true;
+      
     } catch (e) {
       _mostrarSnack(context, "Error: $e", esError: true);
     }
