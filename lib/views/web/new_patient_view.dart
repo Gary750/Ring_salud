@@ -48,7 +48,7 @@ class _NewPatientViewState extends State<NewPatientView> {
                 // --- TARJETA 1: DATOS BÁSICOS ---
                 _buildSectionCard(
                   title: "1. Datos del paciente",
-                  subtitle: "Información personal coincidente con la base de datos.",
+                  subtitle: "Completa la información básica del paciente. Los campos marcados con * son obligatorios.",
                   child: _buildBasicInfoForm(),
                 ),
                 const SizedBox(height: 20),
@@ -64,7 +64,7 @@ class _NewPatientViewState extends State<NewPatientView> {
                 // --- TARJETA 3: CREDENCIALES ---
                 _buildSectionCard(
                   title: "3. Credenciales de acceso",
-                  subtitle: "Asigne el usuario y contraseña para la base de datos.",
+                  subtitle: "Gestiona el usuario y contraseña que el paciente usará para acceder a la app móvil.",
                   child: _buildCredentialsForm(),
                 ),
               ],
@@ -413,7 +413,7 @@ class _NewPatientViewState extends State<NewPatientView> {
               SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  "Estos datos se guardan directamente en las columnas 'usuario' y 'contraseña' de la tabla Paciente.",
+                  "Estas credenciales se usarán para que el paciente acceda a la app móvil. Asegúrate de que sean únicas y fáciles de recordar para el paciente.",
                   style: TextStyle(color: Colors.blueGrey),
                 ),
               ),

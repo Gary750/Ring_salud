@@ -423,9 +423,19 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                         ),
                       ),
                       Expanded(
-                        flex: 3,
+                        flex: 2,
                         child: Text(
                           "Fecha Inicio",
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          "Fecha Fin",
                           style: TextStyle(
                             color: Colors.blue,
                             fontWeight: FontWeight.bold,
@@ -455,11 +465,17 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                             child: Text("Cada ${t['frecuencia_horas']}h"),
                           ),
                           Expanded(
-                            flex: 3,
+                            flex: 2,
                             child: Text(
                               t['fecha_inicio']?.split('T')[0] ?? '-',
                             ),
                           ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              t['fecha_fin']?.split('T')[0] ?? '-',
+                            ),
+                          )
                         ],
                       ),
                     ),
