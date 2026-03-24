@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; //! Supabase
 import 'views/shared/auth_gate.dart'; //! Pantalla de enrutamiento inteligente
+import 'package:flutter_dotenv/flutter_dotenv.dart'; //! Carga de variables de entorno
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   //! Inicialización de Supabase
   await Supabase.initialize(
-    url: 'https://your-supabase-url.supabase.co', 
-    anonKey: 'your-anon-key', 
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   runApp(MyApp());
 }

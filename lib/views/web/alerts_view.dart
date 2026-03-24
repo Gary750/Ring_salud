@@ -191,8 +191,6 @@ class _AlertsViewState extends State<AlertsView> {
         ),
         const SizedBox(height: 5),
         const Text("Revisa qué pacientes no han confirmado sus tomas a tiempo y prioriza tu seguimiento.", style: TextStyle(color: Colors.blue, fontSize: 13)),
-        const SizedBox(height: 10),
-        const Text("Módulos · Alertas", style: TextStyle(color: Colors.blueGrey, fontSize: 13)),
       ],
     );
   }

@@ -16,7 +16,6 @@ class DashboardWeb extends StatefulWidget {
 class _DashboardWebState extends State<DashboardWeb> {
   final supabase = Supabase.instance.client;
 
-  // ✅ Colores como constantes estáticas
   static const Color _sidebarColor = Color(0xFF041E60);
   static const Color _bgLight      = Color(0xFFF4F7FC);
   static const Color _primaryBlue  = Color(0xFF018BF0);
@@ -41,7 +40,6 @@ void initState() {
     });
   }
 
-  // ✅ Refresca pacientes explícitamente (tras agregar uno nuevo)
   void _refreshPatients() {
     setState(() {
       _patientsFuture = _fetchPatients();
@@ -86,7 +84,7 @@ void initState() {
       return data['usuario'] ?? "Sin usuario";
     } catch (e) {
       debugPrint("Error al obtener nombre del doctor: $e"); // ✅ Log real
-      return "Sin nombre"; // ✅ Valor neutro, no "Error"
+      return "Sin nombre";
     }
   }
 
@@ -116,7 +114,8 @@ void initState() {
                 _buildMenuItem(0, "Pacientes", Icons.people),
                 _buildMenuItem(1, "Historial", Icons.history),
                 _buildMenuItem(2, "Alertas", Icons.notifications),
-                _buildMenuItem(3, "Configuración", Icons.settings),
+                _buildMenuItem(3, "Recetas", Icons.receipt_long),
+                _buildMenuItem(4, "Configuración", Icons.settings),
                 const Spacer(),
                 _buildProfileItem(),
               ],
@@ -144,6 +143,12 @@ void initState() {
       case 2:
         return const AlertsView();
       case 3:
+        return _buildPlaceholderView(
+          "Recetas Médicas",
+          "Gestionar las recetas de tus pacientes desde esta sección.",
+          Icons.receipt_long,
+        );
+      case 4:
         return const SettingsView();
       default:
         return _buildPacientesView();
@@ -190,7 +195,7 @@ void initState() {
                     _vistaSecundaria = NewPatientView(
                       onBack: () {
                         _cerrarVistaSecundaria();
-                        _refreshPatients(); // ✅ Refresca tras agregar paciente
+                        _refreshPatients(); 
                       },
                     );
                   });
@@ -236,7 +241,6 @@ void initState() {
                           return const Center(child: CircularProgressIndicator());
                         }
 
-                        // ✅ Feedback real si hubo error
                         if (snapshot.hasError) {
                           return const Center(
                             child: Text("Error al cargar pacientes. Verifica tu conexión."),
@@ -257,7 +261,6 @@ void initState() {
                         return ListView.separated(
                           itemCount: pacientesFiltrados.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
-                          // ✅ PatientRow como widget separado
                           itemBuilder: (context, index) => PatientRow(
                             paciente: pacientesFiltrados[index],
                             onVerDetalle: () {
@@ -333,7 +336,7 @@ void initState() {
           ),
           const SizedBox(width: 10),
           FutureBuilder<String>(
-            future: _doctorNameFuture, // ✅ Usa el Future guardado
+            future: _doctorNameFuture,
             builder: (context, snapshot) => Text(
               snapshot.data ?? "Cargando...",
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

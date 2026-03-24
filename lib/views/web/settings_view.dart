@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../shared/auth_gate.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -10,7 +11,7 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   final supabase = Supabase.instance.client;
-  
+
   bool _isLoading = true;
   Map<String, dynamic>? _doctorData;
 
@@ -38,7 +39,11 @@ class _SettingsViewState extends State<SettingsView> {
     try {
       final userEmail = supabase.auth.currentUser?.email;
       if (userEmail != null) {
-        final data = await supabase.from('medico').select().eq('correo', userEmail).single();
+        final data = await supabase
+            .from('medico')
+            .select()
+            .eq('correo', userEmail)
+            .single();
         _doctorData = data;
         _nameController.text = data['usuario'] ?? '';
         _emailController.text = data['correo'] ?? '';
@@ -50,10 +55,17 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Future<void> _cerrarSesion() async {
+    // 1. Cerramos sesión en Supabase
     await supabase.auth.signOut();
-    // Gracias a nuestro AuthGate en main.dart, esto te mandará directo al Login.
-  }
+    
 
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthGate()),
+        (route) => false, // Esto borra todo el historial de navegación para que no puedan darle "Atrás"
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -63,9 +75,14 @@ class _SettingsViewState extends State<SettingsView> {
         children: [
           _buildHeader(),
           const SizedBox(height: 20),
-          
+
           if (_isLoading)
-            const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,11 +102,7 @@ class _SettingsViewState extends State<SettingsView> {
                 // Columna Derecha
                 Expanded(
                   flex: 4,
-                  child: Column(
-                    children: [
-                      _buildSecurityCard(),
-                    ],
-                  ),
+                  child: Column(children: [_buildSecurityCard()]),
                 ),
               ],
             ),
@@ -102,11 +115,19 @@ class _SettingsViewState extends State<SettingsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Configuración de la cuenta", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _textDark)),
+        Text(
+          "Configuración de la cuenta",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: _textDark,
+          ),
+        ),
         const SizedBox(height: 5),
-        const Text("Gestiona tu perfil profesional, preferencias de notificaciones y seguridad.", style: TextStyle(color: Colors.blue, fontSize: 13)),
-        const SizedBox(height: 10),
-        const Text("Módulos · Configuración", style: TextStyle(color: Colors.blueGrey, fontSize: 13)),
+        const Text(
+          "Gestiona tu perfil profesional, preferencias de notificaciones y seguridad.",
+          style: TextStyle(color: Colors.blue, fontSize: 13),
+        ),
       ],
     );
   }
@@ -120,13 +141,20 @@ class _SettingsViewState extends State<SettingsView> {
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 30, backgroundColor: Colors.blue.shade100, child: Icon(Icons.person, size: 30, color: _primaryBlue)),
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.blue.shade100,
+                child: Icon(Icons.person, size: 30, color: _primaryBlue),
+              ),
               const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Nombre del Médico", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Nombre del Médico",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _nameController,
@@ -138,27 +166,34 @@ class _SettingsViewState extends State<SettingsView> {
             ],
           ),
           const SizedBox(height: 20),
-          const Text("Correo de contacto", style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            "Correo de contacto",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _emailController,
             readOnly: true, // El correo de auth no se cambia tan fácil
-            decoration: _inputDecoration("correo@hospital.com").copyWith(
-              fillColor: Colors.grey.shade100,
-              filled: true,
-            ),
+            decoration: _inputDecoration(
+              "correo@hospital.com",
+            ).copyWith(fillColor: Colors.grey.shade100, filled: true),
           ),
           const SizedBox(height: 20),
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Perfil actualizado")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Perfil actualizado")),
+                );
               },
-              style: ElevatedButton.styleFrom(backgroundColor: _primaryBlue, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryBlue,
+                foregroundColor: Colors.white,
+              ),
               child: const Text("Guardar cambios"),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -167,31 +202,52 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildAlertSettingsCard() {
     return _buildCardWrapper(
       title: "Preferencias de Alertas",
-      subtitle: "Personaliza cómo recibes los avisos de emergencias e incumplimientos.",
+      subtitle:
+          "Personaliza cómo recibes los avisos de emergencias e incumplimientos.",
       child: Column(
         children: [
           SwitchListTile(
-            title: const Text("Sonido de alarma (SOS)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: const Text("Reproducir un sonido fuerte cuando un paciente presione el botón de emergencia.", style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+            title: const Text(
+              "Sonido de alarma (SOS)",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            subtitle: const Text(
+              "Reproducir un sonido fuerte cuando un paciente presione el botón de emergencia.",
+              style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+            ),
             value: _soundAlerts,
             activeColor: _primaryBlue,
             onChanged: (bool value) => setState(() => _soundAlerts = value),
           ),
           const Divider(),
           SwitchListTile(
-            title: const Text("Notificaciones del navegador", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: const Text("Mostrar un banner flotante en tu computadora si la pestaña está en segundo plano.", style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+            title: const Text(
+              "Notificaciones del navegador",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            subtitle: const Text(
+              "Mostrar un banner flotante en tu computadora si la pestaña está en segundo plano.",
+              style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+            ),
             value: _browserNotifications,
             activeColor: _primaryBlue,
-            onChanged: (bool value) => setState(() => _browserNotifications = value),
+            onChanged: (bool value) =>
+                setState(() => _browserNotifications = value),
           ),
           const Divider(),
           SwitchListTile(
-            title: const Text("Resumen semanal por correo", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: const Text("Recibir un reporte en PDF con la adherencia global de tus pacientes.", style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+            title: const Text(
+              "Resumen semanal por correo",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            subtitle: const Text(
+              "Recibir un reporte en PDF con la adherencia global de tus pacientes.",
+              style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+            ),
             value: _emailWeeklySummary,
             activeColor: _primaryBlue,
-            onChanged: (bool value) => setState(() => _emailWeeklySummary = value),
+            onChanged: (bool value) =>
+                setState(() => _emailWeeklySummary = value),
           ),
         ],
       ),
@@ -211,30 +267,47 @@ class _SettingsViewState extends State<SettingsView> {
             },
             icon: const Icon(Icons.lock_outline),
             label: const Text("Cambiar contraseña"),
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
           const SizedBox(height: 15),
-          const Text("Último acceso: Hoy, desde este navegador.", style: TextStyle(color: Colors.blueGrey, fontSize: 11)),
+          const Text(
+            "Último acceso: Hoy, desde este navegador.",
+            style: TextStyle(color: Colors.blueGrey, fontSize: 11),
+          ),
           const Divider(height: 40),
-          
+
           ElevatedButton.icon(
             onPressed: () async {
               // Confirmación antes de salir
-              final bool confirmar = await showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("¿Cerrar sesión?"),
-                  content: const Text("Dejarás de recibir notificaciones en tiempo real en este navegador."),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      onPressed: () => Navigator.pop(context, true), 
-                      child: const Text("Sí, cerrar sesión", style: TextStyle(color: Colors.white)),
+              final bool confirmar =
+                  await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("¿Cerrar sesión?"),
+                      content: const Text(
+                        "Dejarás de recibir notificaciones en tiempo real en este navegador.",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("Cancelar"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text(
+                            "Sí, cerrar sesión",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ) ?? false;
+                  ) ??
+                  false;
 
               if (confirmar) {
                 _cerrarSesion();
@@ -246,7 +319,7 @@ class _SettingsViewState extends State<SettingsView> {
               backgroundColor: Colors.red.shade50,
               foregroundColor: Colors.red,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16)
+              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),
         ],
@@ -255,19 +328,35 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   // Helper visual para las tarjetas
-  Widget _buildCardWrapper({required String title, required String subtitle, required Widget child}) {
+  Widget _buildCardWrapper({
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _textDark)),
-          Text(subtitle, style: const TextStyle(color: Colors.blue, fontSize: 12)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: _textDark,
+            ),
+          ),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.blue, fontSize: 12),
+          ),
           const Divider(height: 30),
           child,
         ],
@@ -280,8 +369,14 @@ class _SettingsViewState extends State<SettingsView> {
       hintText: hint,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
     );
   }
 }
