@@ -11,15 +11,20 @@ class LoginViewWeb extends StatefulWidget {
 
 class _LoginViewWebState extends State<LoginViewWeb> {
   final AuthController _controller = AuthController();
-  bool _rememberMe = false; // Estado local para el checkbox visual
+  bool _rememberMe = false;
+  final Color bgLight = const Color(0xFFF0F4FA); // Fondo general
+    final Color primaryBlue = const Color(0xFF018BF0); // Botón principal
+    final Color textDark = const Color(0xFF022380); // Títulos oscuros
+      
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Colores extraídos de la imagen
-    final Color bgLight = const Color(0xFFF0F4FA); // Fondo general
-    final Color primaryBlue = const Color(0xFF018BF0); // Botón principal
-    final Color textDark = const Color(0xFF022380); // Títulos oscuros
-
+    
     return Scaffold(
       backgroundColor: bgLight,
       body: Center(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ring_salud/views/web/history_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ring_salud/views/web/alerts_view.dart';
+import 'package:ring_salud/views/web/settings_view.dart';
 import 'new_patient_view.dart';
 import 'patient_detail_view.dart';
 
@@ -15,16 +16,35 @@ class DashboardWeb extends StatefulWidget {
 class _DashboardWebState extends State<DashboardWeb> {
   final supabase = Supabase.instance.client;
 
+  // ✅ Colores como constantes estáticas
+  static const Color _sidebarColor = Color(0xFF041E60);
+  static const Color _bgLight      = Color(0xFFF4F7FC);
+  static const Color _primaryBlue  = Color(0xFF018BF0);
+
   int _selectedIndex = 0;
   String _searchQuery = "";
-
-  // --- NUEVA VARIABLE: Controla las sub-vistas (Nuevo Paciente / Detalles) ---
   Widget? _vistaSecundaria;
 
-  // Función para cerrar las sub-vistas y volver a la tabla
+
+Future<List<Map<String, dynamic>>> _patientsFuture = Future.value([]);
+Future<String> _doctorNameFuture = Future.value("Cargando...");
+
+@override
+void initState() {
+  super.initState();
+  _patientsFuture   = _fetchPatients();
+  _doctorNameFuture = _getDoctorName();
+}
   void _cerrarVistaSecundaria() {
     setState(() {
       _vistaSecundaria = null;
+    });
+  }
+
+  // ✅ Refresca pacientes explícitamente (tras agregar uno nuevo)
+  void _refreshPatients() {
+    setState(() {
+      _patientsFuture = _fetchPatients();
     });
   }
 
@@ -38,6 +58,7 @@ class _DashboardWebState extends State<DashboardWeb> {
           .select('id_medico')
           .eq('correo', userEmail)
           .single();
+
       final response = await supabase
           .from('paciente')
           .select()
@@ -46,6 +67,7 @@ class _DashboardWebState extends State<DashboardWeb> {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
+      debugPrint("Error al obtener pacientes: $e"); // ✅ Log real
       return [];
     }
   }
@@ -54,31 +76,31 @@ class _DashboardWebState extends State<DashboardWeb> {
     try {
       final userEmail = supabase.auth.currentUser?.email;
       if (userEmail == null) return "Sin sesión";
+
       final data = await supabase
           .from('medico')
           .select('usuario')
           .eq('correo', userEmail)
           .single();
+
       return data['usuario'] ?? "Sin usuario";
     } catch (e) {
-      return "Error";
+      debugPrint("Error al obtener nombre del doctor: $e"); // ✅ Log real
+      return "Sin nombre"; // ✅ Valor neutro, no "Error"
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final sidebarColor = const Color(0xFF041E60);
-    final bgLight = const Color(0xFFF4F7FC);
-
     return Scaffold(
-      backgroundColor: bgLight,
+      backgroundColor: _bgLight,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------------- LADO IZQUIERDO: EL ÚNICO SIDEBAR REAL ----------------
+          // ---------------- SIDEBAR ----------------
           Container(
             width: 250,
-            color: sidebarColor,
+            color: _sidebarColor,
             child: Column(
               children: [
                 const SizedBox(height: 30),
@@ -91,23 +113,20 @@ class _DashboardWebState extends State<DashboardWeb> {
                   ),
                 ),
                 const SizedBox(height: 40),
-
                 _buildMenuItem(0, "Pacientes", Icons.people),
                 _buildMenuItem(1, "Historial", Icons.history),
                 _buildMenuItem(2, "Alertas", Icons.notifications),
                 _buildMenuItem(3, "Configuración", Icons.settings),
-
                 const Spacer(),
                 _buildProfileItem(),
               ],
             ),
           ),
 
-          // ---------------- LADO DERECHO: CONTENIDO CAMBIANTE ----------------
+          // ---------------- CONTENIDO ----------------
           Expanded(
             child: Container(
-              color: bgLight,
-              // Si hay una sub-vista activa (Detalle o Nuevo), se muestra. Si no, muestra el Menú Principal.
+              color: _bgLight,
               child: _vistaSecundaria ?? _buildMainContent(),
             ),
           ),
@@ -125,19 +144,13 @@ class _DashboardWebState extends State<DashboardWeb> {
       case 2:
         return const AlertsView();
       case 3:
-        return _buildPlaceholderView(
-          "Configuración",
-          "Ajustes de tu cuenta.",
-          Icons.settings,
-        );
+        return const SettingsView();
       default:
         return _buildPacientesView();
     }
   }
 
   Widget _buildPacientesView() {
-    final primaryBlue = const Color(0xFF018BF0);
-
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -145,11 +158,7 @@ class _DashboardWebState extends State<DashboardWeb> {
         children: [
           const Text(
             "Pacientes",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D1F46),
-            ),
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0D1F46)),
           ),
           const Text(
             "Gestiona tus pacientes con tratamiento fijo y supervisa la toma de medicamentos.",
@@ -161,8 +170,7 @@ class _DashboardWebState extends State<DashboardWeb> {
             children: [
               Expanded(
                 child: TextField(
-                  onChanged: (value) =>
-                      setState(() => _searchQuery = value.toLowerCase()),
+                  onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
                   decoration: InputDecoration(
                     hintText: "Buscar por nombre completo o usuario...",
                     prefixIcon: const Icon(Icons.search),
@@ -178,22 +186,21 @@ class _DashboardWebState extends State<DashboardWeb> {
               const SizedBox(width: 20),
               ElevatedButton.icon(
                 onPressed: () {
-                  // ABRIR SUB-VISTA: Nuevo Paciente
                   setState(() {
                     _vistaSecundaria = NewPatientView(
-                      onBack: _cerrarVistaSecundaria,
+                      onBack: () {
+                        _cerrarVistaSecundaria();
+                        _refreshPatients(); // ✅ Refresca tras agregar paciente
+                      },
                     );
                   });
                 },
                 icon: const Icon(Icons.person_add),
                 label: const Text("Nuevo paciente"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
+                  backgroundColor: _primaryBlue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 18,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                 ),
               ),
             ],
@@ -209,93 +216,59 @@ class _DashboardWebState extends State<DashboardWeb> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
+                  // Encabezados de tabla
                   const Row(
                     children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          "Paciente",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          "Enfermedad / Edad",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          "Contacto",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          "Emergencia",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          "Acciones",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      Expanded(flex: 2, child: Text("Paciente",    style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
+                      Expanded(flex: 2, child: Text("Enfermedad / Edad", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
+                      Expanded(flex: 2, child: Text("Contacto",    style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
+                      Expanded(flex: 2, child: Text("Emergencia",  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
+                      Expanded(flex: 1, child: Text("Acciones",    style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
                     ],
                   ),
                   const Divider(),
 
                   Expanded(
                     child: FutureBuilder<List<Map<String, dynamic>>>(
-                      future: _fetchPatients(),
+                      future: _patientsFuture, // ✅ Usa el Future guardado
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting)
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        // ✅ Feedback real si hubo error
+                        if (snapshot.hasError) {
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: Text("Error al cargar pacientes. Verifica tu conexión."),
                           );
+                        }
 
                         final pacientesBase = snapshot.data ?? [];
                         final pacientesFiltrados = pacientesBase.where((p) {
-                          final nombre = (p['nombre'] ?? '')
-                              .toString()
-                              .toLowerCase();
-                          final usuario = (p['usuario'] ?? '')
-                              .toString()
-                              .toLowerCase();
-                          return nombre.contains(_searchQuery) ||
-                              usuario.contains(_searchQuery);
+                          final nombre  = (p['nombre']  ?? '').toString().toLowerCase();
+                          final usuario = (p['usuario'] ?? '').toString().toLowerCase();
+                          return nombre.contains(_searchQuery) || usuario.contains(_searchQuery);
                         }).toList();
 
-                        if (pacientesFiltrados.isEmpty)
-                          return const Center(
-                            child: Text("No se encontraron pacientes."),
-                          );
+                        if (pacientesFiltrados.isEmpty) {
+                          return const Center(child: Text("No se encontraron pacientes."));
+                        }
 
                         return ListView.separated(
                           itemCount: pacientesFiltrados.length,
-                          separatorBuilder: (c, i) => const Divider(height: 1),
-                          itemBuilder: (context, index) =>
-                              _buildPatientRowReal(pacientesFiltrados[index]),
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          // ✅ PatientRow como widget separado
+                          itemBuilder: (context, index) => PatientRow(
+                            paciente: pacientesFiltrados[index],
+                            onVerDetalle: () {
+                              setState(() {
+                                _vistaSecundaria = PatientDetailView(
+                                  paciente: pacientesFiltrados[index],
+                                  onBack: _cerrarVistaSecundaria,
+                                );
+                              });
+                            },
+                          ),
                         );
                       },
                     ),
@@ -309,30 +282,16 @@ class _DashboardWebState extends State<DashboardWeb> {
     );
   }
 
-  Widget _buildPlaceholderView(
-    String titulo,
-    String subtitulo,
-    IconData icono,
-  ) {
+  Widget _buildPlaceholderView(String titulo, String subtitulo, IconData icono) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icono, size: 80, color: Colors.blueGrey[200]),
           const SizedBox(height: 20),
-          Text(
-            titulo,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D1F46),
-            ),
-          ),
+          Text(titulo, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0D1F46))),
           const SizedBox(height: 10),
-          Text(
-            subtitulo,
-            style: const TextStyle(color: Colors.blueGrey, fontSize: 16),
-          ),
+          Text(subtitulo, style: const TextStyle(color: Colors.blueGrey, fontSize: 16)),
         ],
       ),
     );
@@ -354,9 +313,8 @@ class _DashboardWebState extends State<DashboardWeb> {
         onTap: () {
           setState(() {
             _selectedIndex = index;
-            _searchQuery = "";
-            _vistaSecundaria =
-                null; // Fuerza el cierre de sub-vistas al usar el menú
+            _searchQuery   = "";
+            _vistaSecundaria = null;
           });
         },
       ),
@@ -375,21 +333,31 @@ class _DashboardWebState extends State<DashboardWeb> {
           ),
           const SizedBox(width: 10),
           FutureBuilder<String>(
-            future: _getDoctorName(),
+            future: _doctorNameFuture, // ✅ Usa el Future guardado
             builder: (context, snapshot) => Text(
               snapshot.data ?? "Cargando...",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildPatientRowReal(Map<String, dynamic> paciente) {
+// ✅ PatientRow extraído como StatelessWidget independiente
+class PatientRow extends StatelessWidget {
+  final Map<String, dynamic> paciente;
+  final VoidCallback onVerDetalle;
+
+  const PatientRow({
+    super.key,
+    required this.paciente,
+    required this.onVerDetalle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Row(
@@ -401,10 +369,7 @@ class _DashboardWebState extends State<DashboardWeb> {
               children: [
                 Text(
                   paciente['nombre'] ?? '-',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 Text(
                   "Usr: ${paciente['usuario']}",
@@ -419,21 +384,14 @@ class _DashboardWebState extends State<DashboardWeb> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
                     "Activo",
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -459,11 +417,7 @@ class _DashboardWebState extends State<DashboardWeb> {
                   const SizedBox(width: 5),
                   Text(
                     paciente['telefono'] ?? '-',
-                    style: const TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ],
               ),
@@ -473,11 +427,7 @@ class _DashboardWebState extends State<DashboardWeb> {
             flex: 2,
             child: Row(
               children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  size: 14,
-                  color: Colors.orange,
-                ),
+                const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
                 const SizedBox(width: 5),
                 Text(
                   paciente['numero_emergencia'] ?? '-',
@@ -489,15 +439,7 @@ class _DashboardWebState extends State<DashboardWeb> {
           Expanded(
             flex: 1,
             child: TextButton(
-              onPressed: () {
-                // ABRIR SUB-VISTA: Detalles del Paciente
-                setState(() {
-                  _vistaSecundaria = PatientDetailView(
-                    paciente: paciente,
-                    onBack: _cerrarVistaSecundaria,
-                  );
-                });
-              },
+              onPressed: onVerDetalle,
               child: const Text("Ver detalle"),
             ),
           ),

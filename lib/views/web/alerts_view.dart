@@ -19,6 +19,7 @@ class _AlertsViewState extends State<AlertsView> {
   // Estados visuales de filtros
   String filtroEstado = 'Todos';
   String filtroPeriodo = 'Últimos 7 días';
+  String _searchQuery = ''; 
 
   // Métricas
   int criticos = 0;
@@ -51,10 +52,11 @@ class _AlertsViewState extends State<AlertsView> {
     
     _procesarAlertas(rawRecords);
     
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
-  // Motor lógico para clasificar si una toma normal se vuelve "Alerta"
   void _procesarAlertas(List<Map<String, dynamic>> rawRecords) {
     _todasLasAlertas.clear();
     criticos = 0;
@@ -63,8 +65,12 @@ class _AlertsViewState extends State<AlertsView> {
     final now = DateTime.now();
 
     for (var r in rawRecords) {
+      // ✅ ESCUDO 1: Si la fecha viene nula desde Supabase, ignoramos este registro para evitar el crasheo
+      final fechaStr = r['fecha_hora_programada'];
+      if (fechaStr == null) continue; 
+
       final isConf = r['confirmado'] ?? false;
-      final fechaProg = DateTime.parse(r['fecha_hora_programada']).toLocal();
+      final fechaProg = DateTime.parse(fechaStr).toLocal();
       final diffMinutos = now.difference(fechaProg).inMinutes;
       final List confirmaciones = r['historial_confirmaciones'] ?? [];
       
@@ -82,21 +88,25 @@ class _AlertsViewState extends State<AlertsView> {
           retrasos++;
         }
       } else {
-        // Si confirmó, revisamos si lo hizo tarde
         if (confirmaciones.isNotEmpty && (confirmaciones.first['estado'] ?? '').toLowerCase().contains('retraso')) {
           estadoAlerta = "Confirmado tras recordatorio";
           tiempoRetraso = "Resuelto";
         }
       }
 
-      // Si clasificó como algún tipo de alerta, lo agregamos a la lista
       if (estadoAlerta.isNotEmpty) {
-        final pacienteId = r['tratamientos']['paciente']['id_paciente'];
-        pacientesConAlerta.add(pacienteId);
+        // ✅ ESCUDO 2: Asegurar que el objeto tratamientos y paciente existan
+        final tratamiento = r['tratamientos'] ?? {};
+        final paciente = tratamiento['paciente'] ?? {};
+        final pacienteId = paciente['id_paciente'];
+        
+        if (pacienteId != null) {
+          pacientesConAlerta.add(pacienteId);
+        }
 
         _todasLasAlertas.add({
-          'paciente': r['tratamientos']['paciente'],
-          'medicamento': r['tratamientos']['nombre_medicamento'],
+          'paciente': paciente,
+          'medicamento': tratamiento['nombre_medicamento'] ?? 'Medicamento desconocido', // ✅ Valor por defecto
           'fecha_prog': fechaProg,
           'estado_alerta': estadoAlerta,
           'tiempo_retraso': tiempoRetraso,
@@ -109,12 +119,22 @@ class _AlertsViewState extends State<AlertsView> {
   }
 
   List<Map<String, dynamic>> get _alertasFiltradas {
-    if (filtroEstado == 'Todos') return _todasLasAlertas;
     return _todasLasAlertas.where((a) {
+      if (_searchQuery.isNotEmpty) {
+        // ✅ ESCUDO 3: Validar nulos al buscar
+        final paciente = a['paciente'] ?? {};
+        final nombre = (paciente['nombre'] ?? '').toString().toLowerCase();
+        final usuario = (paciente['usuario'] ?? '').toString().toLowerCase();
+        if (!nombre.contains(_searchQuery) && !usuario.contains(_searchQuery)) {
+          return false; 
+        }
+      }
+
       final est = a['estado_alerta'];
-      if (filtroEstado == 'Crítico') return est == 'Incumplimiento crítico';
-      if (filtroEstado == 'Retraso') return est == 'Retraso moderado';
-      if (filtroEstado == 'Resuelto hoy') return est == 'Confirmado tras recordatorio';
+      if (filtroEstado == 'Crítico' && est != 'Incumplimiento crítico') return false;
+      if (filtroEstado == 'Retraso' && est != 'Retraso moderado') return false;
+      if (filtroEstado == 'Resuelto hoy' && est != 'Confirmado tras recordatorio') return false;
+
       return true;
     }).toList();
   }
@@ -161,19 +181,6 @@ class _AlertsViewState extends State<AlertsView> {
               child: const Text("Monitorizando en tiempo real", style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.bold)),
             ),
             const Spacer(),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Buscar paciente por nombre...",
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  filled: true,
-                  fillColor: Colors.white,
-                  isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                ),
-              ),
-            ),
-            const SizedBox(width: 15),
             ElevatedButton.icon(
               onPressed: _loadData, 
               icon: const Icon(Icons.refresh, size: 18), 
@@ -218,7 +225,7 @@ class _AlertsViewState extends State<AlertsView> {
           ),
           const SizedBox(height: 20),
           
-          Wrap( 
+          Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             runSpacing: 8,
             children: [
@@ -266,29 +273,43 @@ class _AlertsViewState extends State<AlertsView> {
           const SizedBox(height: 20),
           
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(width: 80, child: Text("Estado:", style: TextStyle(color: Colors.blue, fontSize: 12))),
-              _buildPill("Todos", filtroEstado == 'Todos', (v) => setState(() => filtroEstado = v)),
-              const SizedBox(width: 10), _buildDot(redAlert), _buildPillText("Crítico", filtroEstado == 'Crítico', (v) => setState(() => filtroEstado = v)),
-              const SizedBox(width: 10), _buildDot(orangeAlert), _buildPillText("Retraso", filtroEstado == 'Retraso', (v) => setState(() => filtroEstado = v)),
-              const SizedBox(width: 10), _buildDot(cyanAlert), _buildPillText("Resuelto hoy", filtroEstado == 'Resuelto hoy', (v) => setState(() => filtroEstado = v)),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 15,
+                  runSpacing: 10,
+                  children: [
+                    _buildPill("Todos", filtroEstado == 'Todos', (v) => setState(() => filtroEstado = v)),
+                    Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [_buildDot(redAlert), _buildPillText("Crítico", filtroEstado == 'Crítico', (v) => setState(() => filtroEstado = v))]),
+                    Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [_buildDot(orangeAlert), _buildPillText("Retraso", filtroEstado == 'Retraso', (v) => setState(() => filtroEstado = v))]),
+                    Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [_buildDot(cyanAlert), _buildPillText("Resuelto hoy", filtroEstado == 'Resuelto hoy', (v) => setState(() => filtroEstado = v))]),
+                  ],
+                ),
+              )
             ],
           ),
           const SizedBox(height: 15),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(width: 80, child: Text("Periodo:", style: TextStyle(color: Colors.blue, fontSize: 12))),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _buildPill("Hoy", filtroPeriodo == 'Hoy', (v) { filtroPeriodo = v; _loadData(); }),
-                  _buildPill("Últimos 7 días", filtroPeriodo == 'Últimos 7 días', (v) { filtroPeriodo = v; _loadData(); }),
-                  _buildPill("Últimos 30 días", filtroPeriodo == 'Últimos 30 días', (v) { filtroPeriodo = v; _loadData(); }),
-                ],
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildPill("Hoy", filtroPeriodo == 'Hoy', (v) { filtroPeriodo = v; _loadData(); }),
+                    _buildPill("Últimos 7 días", filtroPeriodo == 'Últimos 7 días', (v) { filtroPeriodo = v; _loadData(); }),
+                    _buildPill("Últimos 30 días", filtroPeriodo == 'Últimos 30 días', (v) { filtroPeriodo = v; _loadData(); }),
+                  ],
+                ),
               )
             ],
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 30),
           const Text("Consejo: revisa primero los incumplimientos críticos, donde no hubo confirmación ni respuesta a recordatorios.", style: TextStyle(color: Colors.blueGrey, fontSize: 11)),
         ],
       ),
@@ -327,18 +348,33 @@ class _AlertsViewState extends State<AlertsView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Lista de pacientes con alertas", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textDark)),
-              OutlinedButton.icon(onPressed: (){}, icon: const Icon(Icons.filter_alt_outlined, size: 16), label: const Text("Más filtros"))
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+                  decoration: InputDecoration(
+                    hintText: "Buscar paciente por nombre...",
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    filled: true,
+                    fillColor: Colors.blueGrey.shade50,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                  ),
+                ),
+              )
             ],
           ),
+          const SizedBox(height: 5),
           const Text("Incluye retrasos y tomas no confirmadas según el margen configurado.", style: TextStyle(color: Colors.blue, fontSize: 12)),
           const Divider(height: 30),
+          
           const Row(
             children: [
               Expanded(flex: 3, child: Text("Paciente", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))),
               Expanded(flex: 3, child: Text("Último evento", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))),
               Expanded(flex: 2, child: Text("Retraso", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))),
               Expanded(flex: 2, child: Text("Estado", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))),
-              Expanded(flex: 2, child: Text("Acciones", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12))),
             ],
           ),
           const Divider(),
@@ -358,9 +394,9 @@ class _AlertsViewState extends State<AlertsView> {
   }
 
   Widget _buildFilaAlerta(Map<String, dynamic> alerta) {
-    final paciente = alerta['paciente'];
+    final paciente = alerta['paciente'] ?? {};
     final fecha = alerta['fecha_prog'] as DateTime;
-    final estadoStr = alerta['estado_alerta'] as String;
+    final estadoStr = alerta['estado_alerta']?.toString() ?? 'Desconocido';
     
     String momentoDia = fecha.hour < 12 ? "mañana" : (fecha.hour < 19 ? "mediodía" : "noche");
     String eventoTxt = "${alerta['medicamento']} ($momentoDia)";
@@ -369,18 +405,18 @@ class _AlertsViewState extends State<AlertsView> {
     if (estadoStr == "Incumplimiento crítico") badgeColor = redAlert;
     if (estadoStr == "Retraso moderado") badgeColor = orangeAlert;
 
-    // Determinar acción sugerida visualmente
-    String accionBtnTxt = "SMS";
-    if (estadoStr == "Incumplimiento crítico") accionBtnTxt = "SMS + WhatsApp";
-    if (estadoStr == "Retraso moderado") accionBtnTxt = "App + SMS";
+    // ✅ ESCUDO 4: Datos del paciente por defecto
+    final nombre = paciente['nombre'] ?? 'Sin nombre';
+    final usuario = paciente['usuario'] ?? 'Sin ID';
+    final retraso = alerta['tiempo_retraso']?.toString() ?? '';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text("${paciente['nombre']} · ${paciente['usuario']}", style: TextStyle(fontWeight: FontWeight.bold, color: textDark, fontSize: 13))),
+          Expanded(flex: 3, child: Text("$nombre · $usuario", style: TextStyle(fontWeight: FontWeight.bold, color: textDark, fontSize: 13))),
           Expanded(flex: 3, child: Text(eventoTxt, style: TextStyle(color: textDark, fontSize: 13))),
-          Expanded(flex: 2, child: Text(alerta['tiempo_retraso'], style: TextStyle(color: badgeColor, fontSize: 13, fontWeight: FontWeight.bold))),
+          Expanded(flex: 2, child: Text(retraso, style: TextStyle(color: badgeColor, fontSize: 13, fontWeight: FontWeight.bold))),
           Expanded(flex: 2, child: Align(
             alignment: Alignment.centerLeft,
             child: Container(
@@ -388,17 +424,6 @@ class _AlertsViewState extends State<AlertsView> {
               decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12)),
               child: Text(estadoStr, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
             ),
-          )),
-          Expanded(flex: 2, child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: primaryBlue, borderRadius: BorderRadius.circular(20)),
-                child: Text(accionBtnTxt, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 8),
-              Text("Ver detalle", style: TextStyle(color: primaryBlue, fontSize: 11, decoration: TextDecoration.underline)),
-            ],
           )),
         ],
       ),
