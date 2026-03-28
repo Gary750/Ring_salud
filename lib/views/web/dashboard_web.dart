@@ -3,6 +3,7 @@ import 'package:ring_salud/views/web/history_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ring_salud/views/web/alerts_view.dart';
 import 'package:ring_salud/views/web/settings_view.dart';
+import 'package:ring_salud/views/web/recetas_view.dart';
 import 'new_patient_view.dart';
 import 'patient_detail_view.dart';
 
@@ -143,11 +144,7 @@ void initState() {
       case 2:
         return const AlertsView();
       case 3:
-        return _buildPlaceholderView(
-          "Recetas Médicas",
-          "Gestionar las recetas de tus pacientes desde esta sección.",
-          Icons.receipt_long,
-        );
+        return const RecetasView();
       case 4:
         return const SettingsView();
       default:
@@ -284,22 +281,7 @@ void initState() {
       ),
     );
   }
-
-  Widget _buildPlaceholderView(String titulo, String subtitulo, IconData icono) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icono, size: 80, color: Colors.blueGrey[200]),
-          const SizedBox(height: 20),
-          Text(titulo, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0D1F46))),
-          const SizedBox(height: 10),
-          Text(subtitulo, style: const TextStyle(color: Colors.blueGrey, fontSize: 16)),
-        ],
-      ),
-    );
-  }
-
+  
   Widget _buildMenuItem(int index, String title, IconData icon) {
     final isActive = _selectedIndex == index && _vistaSecundaria == null;
     return Container(
