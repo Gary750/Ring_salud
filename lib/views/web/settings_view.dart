@@ -71,7 +71,6 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _cerrarSesion() async {
     await _controller.logout();
-    // TODO: Descomenta esta línea y pon el nombre real de tu pantalla de Login
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginViewWeb()), (route) => false);
   }
 
