@@ -19,15 +19,11 @@ class PatientDetailView extends StatefulWidget {
 class _PatientDetailViewState extends State<PatientDetailView> {
   final PatientDetailController _controller = PatientDetailController();
   bool _obscurePassword = true;
+  bool _showingAlerts = false; 
 
-
-  bool _showingAlerts = false; // ✅ NUEVO: El interruptor mágico
-
-  // ✅ Constantes estáticas
   static const Color _primaryBlue = Color(0xFF018BF0);
   static const Color _textDark    = Color(0xFF0D1F46);
 
-  // ✅ Futures guardados en initState
   Future<List<Map<String, dynamic>>> _treatmentsFuture = Future.value([]);
   Future<List<Map<String, dynamic>>> _historyFuture    = Future.value([]);
 
@@ -47,12 +43,10 @@ class _PatientDetailViewState extends State<PatientDetailView> {
 
   @override
   Widget build(BuildContext context) {
-
-    // ✅ Si el interruptor está activo, mostramos la nueva pantalla
     if (_showingAlerts) {
       return PatientAlertsView(
         paciente: widget.paciente,
-        onBack: () => setState(() => _showingAlerts = false), // Al regresar, apaga el interruptor
+        onBack: () => setState(() => _showingAlerts = false),
       );
     }
 
@@ -120,7 +114,6 @@ class _PatientDetailViewState extends State<PatientDetailView> {
             const SizedBox(width: 15),
             OutlinedButton.icon(
               onPressed: () {
-                // ✅ Activa el interruptor para cambiar la vista
                 setState(() => _showingAlerts = true); 
               },
               icon: const Icon(Icons.notifications_active_outlined),
@@ -214,7 +207,6 @@ class _PatientDetailViewState extends State<PatientDetailView> {
           const Text("Contraseña",
               style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 13)),
           const SizedBox(height: 5),
-          // ✅ Advertencia: contraseña no debería mostrarse si se hashea en BD
           Row(
             children: [
               Text(
@@ -254,7 +246,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
           const Divider(height: 30),
 
           FutureBuilder<List<Map<String, dynamic>>>(
-            future: _treatmentsFuture, // ✅ Usa el Future guardado
+            future: _treatmentsFuture, 
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
@@ -281,7 +273,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
                       Expanded(flex: 2, child: Text("Frec.",       style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13))),
                       Expanded(flex: 3, child: Text("Periodo",     style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13))),
                       Expanded(flex: 2, child: Text("Estado",      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13))),
-                      Expanded(flex: 1, child: Icon(Icons.delete, color: Colors.blue, size: 16)), // Columna para acciones
+                      Expanded(flex: 1, child: Icon(Icons.delete, color: Colors.blue, size: 16)), 
                     ],
                   ),
                   const Divider(),
@@ -380,7 +372,6 @@ class _PatientDetailViewState extends State<PatientDetailView> {
     );
   }
 
-  // ✅ NUEVA FUNCIÓN: Diálogo para cancelar solo un medicamento
   void _desactivarIndividual(int idTratamiento, String nombreMed) async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -441,7 +432,7 @@ class _PatientDetailViewState extends State<PatientDetailView> {
           const Divider(height: 30),
 
           FutureBuilder<List<Map<String, dynamic>>>(
-            future: _historyFuture, // ✅ Usa el Future guardado
+            future: _historyFuture, 
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -488,110 +479,37 @@ class _PatientDetailViewState extends State<PatientDetailView> {
     );
   }
 
-  void _mostrarDialogoNuevaPauta() {
-    // ✅ Controllers declarados para poder hacer dispose
-    final nameCtrl = TextEditingController();
-    final doseCtrl = TextEditingController();
-    final freqCtrl = TextEditingController();
-    final daysCtrl = TextEditingController();
-    final formKey  = GlobalKey<FormState>();
-
-    void disposeControllers() {
-      nameCtrl.dispose();
-      doseCtrl.dispose();
-      freqCtrl.dispose();
-      daysCtrl.dispose();
-    }
-
-    showDialog(
+void _mostrarDialogoNuevaPauta() async {
+    // 1. Abrimos el nuevo widget que vamos a crear y esperamos su respuesta
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Añadir medicamento"),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: "Medicamento", hintText: "Ej. Paracetamol"),
-                  validator: (v) => (v == null || v.isEmpty) ? "Requerido" : null,
-                ),
-                TextFormField(
-                  controller: doseCtrl,
-                  decoration: const InputDecoration(labelText: "Dosis", hintText: "Ej. 500mg"),
-                  validator: (v) => (v == null || v.isEmpty) ? "Requerido" : null,
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: freqCtrl,
-                        decoration: const InputDecoration(labelText: "Frec. (Horas)"),
-                        keyboardType: TextInputType.number,
-                        // ✅ Valida número y que sea > 0
-                        validator: (v) {
-                          final n = int.tryParse(v ?? '');
-                          if (n == null || n <= 0) return "Debe ser > 0";
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: daysCtrl,
-                        decoration: const InputDecoration(labelText: "Duración (Días)"),
-                        keyboardType: TextInputType.number,
-                        // ✅ Valida número y que sea > 0
-                        validator: (v) {
-                          final n = int.tryParse(v ?? '');
-                          if (n == null || n <= 0) return "Debe ser > 0";
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                disposeControllers(); // ✅ Libera memoria al cancelar
-                Navigator.pop(context);
-              },
-              child: const Text("Cancelar"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-
-                // ✅ int.parse seguro — ya validado arriba
-                final frec = int.parse(freqCtrl.text);
-                final dias = int.parse(daysCtrl.text);
-
-                disposeControllers(); // ✅ Libera memoria antes de cerrar
-                Navigator.pop(context);
-
-                final exito = await _controller.addSingleTreatment(
-                  widget.paciente['id_paciente'],
-                  nameCtrl.text,
-                  doseCtrl.text,
-                  frec,
-                  dias,
-                );
-                // ✅ mounted verificado
-                if (exito && mounted) _refreshData();
-              },
-              child: const Text("Guardar cambios"),
-            ),
-          ],
-        );
-      },
+      barrierDismissible: false, // Evita que se cierre tocando afuera accidentalmente
+      builder: (context) => const _DialogoNuevaPautaWidget(),
     );
+
+    // 2. Si el usuario canceló, result será nulo. Si guardó, procesamos:
+    if (result != null && mounted) {
+      final idPac = widget.paciente['id_paciente'];
+
+      final exito = await _controller.addSingleTreatment(
+        idPac,
+        result['name'],
+        result['dose'],
+        result['frec'],
+        result['dias'],
+      );
+      
+      if (exito && mounted) {
+        _refreshData();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${result['name']} añadido"), backgroundColor: Colors.green),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error al guardar"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildHistoryRow({
@@ -640,6 +558,105 @@ class _PatientDetailViewState extends State<PatientDetailView> {
         Text(label, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 5),
         Text(value, style: const TextStyle(fontSize: 16, color: _textDark, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+}
+
+class _DialogoNuevaPautaWidget extends StatefulWidget {
+  const _DialogoNuevaPautaWidget();
+
+  @override
+  State<_DialogoNuevaPautaWidget> createState() => _DialogoNuevaPautaWidgetState();
+}
+
+class _DialogoNuevaPautaWidgetState extends State<_DialogoNuevaPautaWidget> {
+  final nameCtrl = TextEditingController();
+  final doseCtrl = TextEditingController();
+  final freqCtrl = TextEditingController();
+  final daysCtrl = TextEditingController();
+  final formKey  = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    // Flutter llamará a esto de forma 100% segura cuando la animación termine
+    nameCtrl.dispose();
+    doseCtrl.dispose();
+    freqCtrl.dispose();
+    daysCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Añadir medicamento"),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Medicamento", hintText: "Ej. Paracetamol"),
+              validator: (v) => (v == null || v.isEmpty) ? "Requerido" : null,
+            ),
+            TextFormField(
+              controller: doseCtrl,
+              decoration: const InputDecoration(labelText: "Dosis", hintText: "Ej. 500mg"),
+              validator: (v) => (v == null || v.isEmpty) ? "Requerido" : null,
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: freqCtrl,
+                    decoration: const InputDecoration(labelText: "Frec. (Horas)"),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      if (n == null || n <= 0) return "Debe ser > 0";
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: daysCtrl,
+                    decoration: const InputDecoration(labelText: "Duración (Días)"),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      if (n == null || n <= 0) return "Debe ser > 0";
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text("Cancelar"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (!formKey.currentState!.validate()) return;
+            
+            // Enviamos los datos a la pantalla principal y cerramos
+            Navigator.pop(context, {
+              'name': nameCtrl.text,
+              'dose': doseCtrl.text,
+              'frec': int.parse(freqCtrl.text),
+              'dias': int.parse(daysCtrl.text),
+            });
+          },
+          child: const Text("Guardar cambios"),
+        ),
       ],
     );
   }
