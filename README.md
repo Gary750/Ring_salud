@@ -1,4 +1,4 @@
-# 💍 RING Salud
+# RING Salud
 
 **RING Salud** es un ecosistema integral de salud y recordatorios de medicación diseñado para conectar a médicos y pacientes en tiempo real. Construido con **Flutter** y **Supabase**, el sistema se divide en dos plataformas sincronizadas: un **Panel Web** de control clínico para médicos y una **App Móvil** interactiva para pacientes.
 
