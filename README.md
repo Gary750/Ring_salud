@@ -44,3 +44,15 @@ Asegúrate de tener instalado Flutter SDK (versión más reciente recomendada) y
 git clone [https://github.com/Gary750/Ring_salud.git](https://github.com/Gary750/Ring_salud.git)
 cd Ring_salud
 flutter pub get
+
+### 2. Configuración de Variables de Entorno (.env)
+Para proteger la conexión a la base de datos, las credenciales de Supabase se manejan mediante variables de entorno. Nunca subas tus API Keys al repositorio.
+
+Crea un archivo llamado .env en la raíz del proyecto (al mismo nivel que tu pubspec.yaml).
+
+Agrega tus credenciales de Supabase dentro del archivo con el siguiente formato:
+
+SUPABASE_URL=tu_url_de_supabase_aqui
+SUPABASE_ANON_KEY=tu_anon_key_de_supabase_aqui
+
+  *Nota: El archivo main.dart ya está configurado para leer estas variables automáticamente al arrancar la app.
