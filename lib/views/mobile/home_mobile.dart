@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:developer';
 import '../../models/medication_model.dart';
-import '../../controllers/patient_mobile_controller.dart';
 import '../../services/notification_service.dart';
 import 'emergency_view_mobile.dart';
 import 'recordatorios_mobile.dart';

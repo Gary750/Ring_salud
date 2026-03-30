@@ -7,7 +7,6 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:get/get.dart'; 
 import '../views/shared/auth_gate.dart';
 
-import '../main.dart';
 
 class TreatmentForm {
   final TextEditingController nameController = TextEditingController();
