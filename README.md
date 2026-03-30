@@ -35,10 +35,6 @@
 
 ## 🚀 Instalación y Configuración Local
 
-Si deseas clonar y correr este proyecto en tu máquina local, sigue estos pasos:
-
-## 🚀 Instalación y Configuración Local
-
 Si deseas clonar y ejecutar este proyecto en tu máquina local, sigue estos pasos:
 
 ### 1. Prerrequisitos
